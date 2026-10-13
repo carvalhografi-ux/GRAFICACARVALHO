@@ -545,6 +545,7 @@ def load_os_photos(oid, color='color'):
                     photos.append({'name':str(row['filename'])[:120],
                         'width':pic.width,'height':pic.height,
                         'gray':color=='bw','data':out.getvalue()})
+                    break  # A OS exibe somente a primeira imagem válida.
             except (OSError,ValueError,UnidentifiedImageError,Image.DecompressionBombError):
                 continue
     return photos
