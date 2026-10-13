@@ -651,7 +651,7 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos
 def make_pdf(order, mode='a5', color='color'):
     """Uma OS em A5 real ou uma OS ampliada para a folha A4 retrato."""
     if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
-    photos=load_os_photos(order['id'],color)
+    photos=load_os_photos(order['id'],color)[:1]
     pages,logo=make_os_pages(order, 'A4 (210 x 297 mm)' if mode=='a4' else 'A5 (148 x 210 mm)',
                              color=color,photos=photos)
     if mode=='a5':
@@ -674,8 +674,8 @@ def make_pdf_double(first,second,color='color'):
     if first['id']==second['id']:
         raise AppError(422,'Escolha duas ordens de serviço diferentes.')
     if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
-    images_left=load_os_photos(first['id'],color)
-    images_right=load_os_photos(second['id'],color)
+    images_left=load_os_photos(first['id'],color)[:1]
+    images_right=load_os_photos(second['id'],color)[:1]
     left,logo=make_os_pages(first,color=color,photos=images_left)
     right,_=make_os_pages(second,color=color,photos=images_right,photo_offset=len(images_left))
     # Cada uma fica centralizada em sua metade de A4 (148,5 mm).
