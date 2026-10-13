@@ -113,6 +113,7 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
  <div class="modal-head"><div><h2 id="printTitle">Imprimir ordens de serviço</h2><p>Escolha o formato e os pedidos que deseja colocar na folha.</p></div><button type="button" class="close" id="printClose" aria-label="Fechar impressão">×</button></div>
  <div class="print-content">
   <div class="print-options" role="group" aria-label="Formato de impressão">
+   <label class="print-option"><input type="radio" name="printMode" value="a5"><span><strong>Uma OS · A5</strong><small>Uma ordem de serviço no formato A5 real (148 × 210 mm).</small></span></label>
    <label class="print-option"><input type="radio" name="printMode" value="a4" checked><span><strong>Uma OS · A4 inteiro</strong><small>Uma ordem de serviço ampliada para preencher a folha A4 na vertical (210 × 297 mm).</small></span></label>
    <label class="print-option"><input type="radio" name="printMode" value="dupla"><span><strong>Duas OS · A4 horizontal</strong><small>Escolha dois pedidos diferentes; cada OS ocupará um espaço A5 (148 × 210 mm).</small></span></label>
   </div>
@@ -120,7 +121,12 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
    <div><label for="printOrder1">Primeira ordem de serviço</label><select id="printOrder1" required><option value="">Carregando pedidos...</option></select></div>
    <div id="printSecondField" hidden><label for="printOrder2">Segunda ordem de serviço</label><select id="printOrder2"><option value="">Selecione o segundo pedido...</option></select></div>
   </div><div class="print-preview"><div><div class="print-sheet a4" id="printSheet"><span class="print-mini-os"></span></div><div class="print-preview-title" id="printPreviewTitle">Folha A4 · vertical</div></div></div></div>
-  <div class="print-note">O PDF é gerado pelo próprio Python e está pronto para impressão. Na gráfica, selecione <b>Tamanho real / 100%</b> e desative <b>ajustar à página</b>. Na opção dupla, o centro da folha terá uma guia discreta de corte. Observações muito longas continuam em folhas adicionais.</div>
+  <fieldset style="border:1px solid #dce2f0;border-radius:10px;padding:12px 14px;margin:12px 0" id="osColorField">
+     <legend style="font-weight:800;padding:0 6px">Cor da ordem de serviço</legend>
+     <label style="display:inline-flex;gap:7px;align-items:center;margin-right:20px;cursor:pointer"><input type="radio" name="printColor" value="color" checked> Colorida</label>
+     <label style="display:inline-flex;gap:7px;align-items:center;cursor:pointer"><input type="radio" name="printColor" value="bw"> Preto e branco</label>
+  </fieldset>
+  <div class="print-note">O PDF inclui até 12 fotos anexadas por pedido em páginas adicionais, mantendo o formato e os detalhes da primeira folha. Arquivos CDR/PSD e outros formatos não fotográficos continuam disponíveis para baixar. O PDF é gerado pelo próprio Python e está pronto para impressão. Na gráfica, selecione <b>Tamanho real / 100%</b> e desative <b>ajustar à página</b>. Na opção dupla, o centro da folha terá uma guia discreta de corte. Observações muito longas continuam em folhas adicionais.</div>
  </div>
  <div class="print-foot"><button type="button" class="btn" id="printCancel">Cancelar</button><button type="button" class="btn" id="printDownload">↓ Baixar PDF</button><button type="button" class="btn primary" id="printOpen">↗ Abrir e imprimir</button></div>
 </dialog>
@@ -172,14 +178,14 @@ async function refresh(){
  $('viewTitle').textContent=titleMap[view]?.[0]||'Clientes';
  if(view==='clientes'){++reloadIndex;await refreshClients();return}
  const seq=++reloadIndex;try{const params=new URLSearchParams({view,day:$('day').value,search:$('search').value});const [list,summary]=await Promise.all([api('/api/orders?'+params),api('/api/summary?day='+encodeURIComponent($('day').value))]);if(seq!==reloadIndex)return;records=list.items;$('statPending').textContent=summary.pending;$('statProducing').textContent=summary.producing;$('statCompleted').textContent=summary.completed;$('statReceivable').textContent=money(summary.receivable);document.querySelectorAll('[data-count]').forEach(n=>n.textContent=summary.counts[n.dataset.count]||0);$('viewTitle').textContent=titleMap[view][0];$('viewSub').textContent=titleMap[view][1];document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('countLabel').textContent=`${records.length} pedido${records.length===1?'':'s'}`;const tbody=$('rows');if(!records.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty"><span class="empty-ico">▢</span><b>Nenhum pedido encontrado</b>Cadastre um novo serviço ou ajuste o filtro e a data.</div></td></tr>';return}
-tbody.innerHTML=records.map(s=>`<tr><td><span class="client">${esc(s.client)}</span><span class="sub">${esc(s.code||s.id.slice(0,8))}${s.attachments_count?` · 📎 ${s.attachments_count} anexo(s)`:''}</span></td><td><div class="service-cell">${esc(s.service)}</div><span class="sub">${s.quantity} un. · ${esc(s.priority)}</span></td><td>${fmtDay(s.due_date)}${s.due_date<DAY()&&s.status!=='Concluído'&&s.status!=='Cancelado'?'<span class="sub" style="color:#cb495d">Atrasado</span>':''}</td><td>${tag(s.status)}</td><td>${tag(s.payment,true)}</td><td class="value">${money(s.total)}</td><td class="value">${money(s.balance)}</td><td><div class="row-actions"><button class="tiny" data-action="edit" data-id="${esc(s.id)}">Editar</button><a class="tiny os" href="/api/orders/${encodeURIComponent(s.id)}/pdf">↓ OS A5</a><button class="tiny os" data-action="print" data-id="${esc(s.id)}">▤ A4 / Dupla</button>${s.status!=='Concluído'&&s.status!=='Cancelado'?`<button class="tiny" data-action="done" data-id="${esc(s.id)}">✓ Concluir</button>`:''}</div></td></tr>`).join('')}
+tbody.innerHTML=records.map(s=>`<tr><td><span class="client">${esc(s.client)}</span><span class="sub">${esc(s.code||s.id.slice(0,8))}${s.attachments_count?` · 📎 ${s.attachments_count} anexo(s)`:''}</span></td><td><div class="service-cell">${esc(s.service)}</div><span class="sub">${s.quantity} un. · ${esc(s.priority)}</span></td><td>${fmtDay(s.due_date)}${s.due_date<DAY()&&s.status!=='Concluído'&&s.status!=='Cancelado'?'<span class="sub" style="color:#cb495d">Atrasado</span>':''}</td><td>${tag(s.status)}</td><td>${tag(s.payment,true)}</td><td class="value">${money(s.total)}</td><td class="value">${money(s.balance)}</td><td><div class="row-actions"><button class="tiny" data-action="edit" data-id="${esc(s.id)}">Editar</button><a class="tiny os" type="button" data-action="printa5" data-id="${esc(s.id)}">↓ OS A5</button><button class="tiny os" data-action="print" data-id="${esc(s.id)}">▤ A4 / Dupla</button>${s.status!=='Concluído'&&s.status!=='Cancelado'?`<button class="tiny" data-action="done" data-id="${esc(s.id)}">✓ Concluir</button>`:''}</div></td></tr>`).join('')}
 catch(e){notify('Não foi possível atualizar: '+e.message)}}
 document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{view=btn.dataset.view;refresh()}));
 $('day').addEventListener('change',refresh);
 function shiftDay(inc){const d=new Date($('day').value+'T12:00:00');d.setDate(d.getDate()+inc);$('day').value=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');refresh()}
 $('prevDay').onclick=()=>shiftDay(-1);$('nextDay').onclick=()=>shiftDay(1);$('btnToday').onclick=()=>{$('day').value=DAY();refresh()};
 $('search').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refresh,240)});
-$('rows').addEventListener('click',async ev=>{const btn=ev.target.closest('button[data-action]');if(!btn)return;const id=btn.dataset.id;if(btn.dataset.action==='edit'){await openModal(id)}else if(btn.dataset.action==='print'){await openPrintDialog(id)}else if(btn.dataset.action==='done'){if(!confirm('Marcar este serviço como concluído?'))return;const s=records.find(x=>x.id===id);if(!s)return;try{await api('/api/orders/'+id,jsonMethod('PUT',formFromOrder(s,'Concluído')));notify('Serviço marcado como concluído.');refresh()}catch(e){notify(e.message)}}});
+$('rows').addEventListener('click',async ev=>{const btn=ev.target.closest('button[data-action]');if(!btn)return;const id=btn.dataset.id;if(btn.dataset.action==='edit'){await openModal(id)}else if(btn.dataset.action==='print'){await openPrintDialog(id)}else if(btn.dataset.action==='printa5'){await openPrintDialog(id,'a5')}else if(btn.dataset.action==='done'){if(!confirm('Marcar este serviço como concluído?'))return;const s=records.find(x=>x.id===id);if(!s)return;try{await api('/api/orders/'+id,jsonMethod('PUT',formFromOrder(s,'Concluído')));notify('Serviço marcado como concluído.');refresh()}catch(e){notify(e.message)}}});
 // Gerador de OS - PDFs A4 usando apenas o servidor Python offline.
 let printOrders=[];
 function printMode(){return document.querySelector('input[name="printMode"]:checked').value}
@@ -189,9 +195,9 @@ function updatePrintMode(){
  $('printOrder2').required=dual;
  $('printSheet').className='print-sheet '+(dual?'dupla':'a4');
  $('printSheet').innerHTML=dual?'<span class="print-mini-os"></span><span class="print-mini-os"></span>':'<span class="print-mini-os"></span>';
- $('printPreviewTitle').textContent=dual?'A4 horizontal · 2 × A5':'A4 vertical · 1 OS completa';
+ $('printPreviewTitle').textContent=dual?'A4 horizontal · 2 × A5':printMode()==='a5'?'A5 vertical · 1 OS completa':'A4 vertical · 1 OS completa';
 }
-async function openPrintDialog(selectedId=null){
+async function openPrintDialog(selectedId=null,selectedMode='a4'){
  try{
    const response=await api('/api/orders?view=todos');
    printOrders=response.items;
@@ -201,7 +207,7 @@ async function openPrintDialog(selectedId=null){
    $('printOrder2').innerHTML=opts;
    $('printOrder1').value=selectedId&&printOrders.some(s=>s.id===selectedId)?selectedId:'';
    $('printOrder2').value='';
-   document.querySelector('input[name="printMode"][value="a4"]').checked=true;
+   document.querySelector('input[name="printMode"][value="'+selectedMode+'"]').checked=true;
    updatePrintMode();
    $('printDialog').showModal();
  }catch(e){notify('Não foi possível carregar os pedidos: '+e.message)}
@@ -213,7 +219,7 @@ function chosenPrintUrl(inline=false){
  if(!first)throw Error('Escolha a primeira ordem de serviço.');
  if(dual&&!second)throw Error('Escolha a segunda ordem de serviço.');
  if(dual&&first===second)throw Error('As duas ordens devem ser de pedidos diferentes.');
- const qs=new URLSearchParams({mode:dual?'dupla':'a4',id1:first});
+ const qs=new URLSearchParams({mode:printMode(),id1:first,color:document.querySelector('input[name="printColor"]:checked').value});
  if(dual)qs.set('id2',second);
  if(inline)qs.set('visualizar','1');
  return '/api/print/os?'+qs.toString();
