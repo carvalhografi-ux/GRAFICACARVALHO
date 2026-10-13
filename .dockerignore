@@ -1,0 +1,20 @@
+# Nao incluir dados privados na imagem Docker
+.git
+.github
+.gitignore
+.env
+.env.*
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.db-journal
+*backup*.json
+*Backup*.json
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+README.md
