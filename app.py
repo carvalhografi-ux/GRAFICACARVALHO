@@ -26,6 +26,8 @@ LOGO = STATIC/'logo_carvalho.png'
 STATUS = {'Pendente','Em produção','Aguardando cliente','Concluído','Cancelado'}
 PRIORITIES = {'Normal','Alta','Urgente'}
 MAX_FILE = 30*1024*1024
+# Proteção de memória para o servidor Render Free (envios de até 40 MB em arquivos).
+MAX_UPLOAD_BODY = 42*1024*1024
 
 class AppError(Exception):
     def __init__(self, status:int, message:str):
@@ -357,6 +359,14 @@ def restore(raw):
     except (ValueError,KeyError,TypeError,AppError) as err:
         raise AppError(422,'Backup inválido: '+str(err))
     with connect() as db:
+        # Os usuários não são apagados pelo backup. Recuse a restauração quando
+        # ela deixaria contas do portal apontando para clientes inexistentes.
+        linked={r['client_id'] for r in db.execute(
+            "SELECT DISTINCT client_id FROM app_users WHERE role='client' AND client_id IS NOT NULL")}
+        restored={c['id'] for c in parsed_clients}
+        if not linked.issubset(restored):
+            raise AppError(409, 'Este backup não contém todos os clientes associados a contas do portal. '
+                              'Preserve os cadastros vinculados ou desative a vinculação antes de restaurar.')
         db.execute('SELECT last_num FROM order_counter WHERE id=1 FOR UPDATE')
         previous_high=max(highwater(db),backed_up_last_num)
         # Resolva conflitos ANTES do INSERT (o índice UNIQUE já existe no banco).
@@ -844,7 +854,7 @@ class Handler(BaseHTTPRequestHandler):
                         arr=[dict(x) for x in db.execute('SELECT id,filename,content_type,size,created_at FROM attachments WHERE order_id=? ORDER BY created_at,id',(oid,)).fetchall()]
                     return self.reply(200,arr)
                 if method=='POST':
-                    files=[(filename or 'arquivo',mime,blob) for field,filename,mime,blob in self.files(36*MAX_FILE+100000) if field=='files']
+                    files=[(filename or 'arquivo',mime,blob) for field,filename,mime,blob in self.files(MAX_UPLOAD_BODY) if field=='files']
                     return self.reply(201,store_attachments(oid,files))
             elif sub=='pdf' and method=='GET':
                 with connect() as db:data=fetch_order(db,oid)
