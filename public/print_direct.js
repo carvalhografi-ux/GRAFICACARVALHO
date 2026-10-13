@@ -27,7 +27,7 @@ function init(){
  $('printOpen').parentNode.insertBefore(btn,$('printOpen'));
  const before=window.chosenPrintUrl;
  if(typeof before==='function')window.chosenPrintUrl=function(inline){
-  if(printMode()!=='a5')return before(inline);
+  if(document.querySelector('input[name="printColor"]') || printMode()!=='a5')return before(inline);
   const id=$('printOrder1').value;if(!id)throw Error('Selecione uma ordem de serviço.');
   const q=new URLSearchParams({mode:'a5',id1:id});if(inline)q.set('visualizar','1');
   return '/api/print/os?'+q.toString();
@@ -67,7 +67,7 @@ function init(){
    if(mode==='dupla'&&(!second||first===second))throw Error('Escolha duas OS diferentes.');
    btn.disabled=true;btn.textContent='Enviando...';
    await api('/api/print/jobs',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({printer:$('gcPrinter').value,mode:mode,id1:first,id2:second,copies:Number($('gcCopies').value)})});
+      body:JSON.stringify({printer:$('gcPrinter').value,mode:mode,id1:first,id2:second,copies:Number($('gcCopies').value),color:document.querySelector('input[name="printColor"]:checked').value})});
    d.close();notify('OS enviada à impressora. Confira a fila do Windows.');
   }catch(e){notify('Impressão não enviada: '+e.message)}
   finally{btn.textContent='🖨 Imprimir automaticamente';await refresh()}
