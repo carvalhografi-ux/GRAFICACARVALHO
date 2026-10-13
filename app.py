@@ -469,7 +469,7 @@ class PDF:
         self.objects.append(blob);return len(self.objects)-1
     def stream(self,dic,blob):
         return self.add(('<< '+dic+' /Length '+str(len(blob))+' >>\nstream\n').encode()+blob+b'\nendstream')
-    def build(self,page_commands,img=None,page_w=PW,page_h=PH):
+    def build(self,page_commands,img=None,page_w=PW,page_h=PH,extra_images=()):
         catalog=self.add(b'')
         pages=self.add(b'')
         font=self.add(b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>')
@@ -482,12 +482,18 @@ class PDF:
                 aid=self.stream(f'/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode',zlib.compress(alpha,7))
                 smask=f' /SMask {aid} 0 R'
             iid=self.stream(f'/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode{smask}',zlib.compress(rgb,7))
-            image_entry=f' /XObject << /Logo {iid} 0 R >>'
+            image_entry=f' /Logo {iid} 0 R'
+        for i,photo in enumerate(extra_images):
+            width,height=photo['width'],photo['height']
+            col='/DeviceGray' if photo['gray'] else '/DeviceRGB'
+            iid=self.stream(f'/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace {col} /BitsPerComponent 8 /Filter /DCTDecode',photo['data'])
+            image_entry+=f' /Foto{i} {iid} 0 R'
+        xobjects=f' /XObject <<{image_entry} >>' if image_entry else ''
         kids=[]
         for commands in page_commands:
             blob='\n'.join(commands).encode('latin1')
             content_id=self.stream('/Filter /FlateDecode',zlib.compress(blob,7))
-            page_id=self.add(f'<< /Type /Page /Parent {pages} 0 R /MediaBox [0 0 {page_w:.4f} {page_h:.4f}] /Resources << /Font << /F1 {font} 0 R /F2 {fontb} 0 R >>{image_entry} >> /Contents {content_id} 0 R >>'.encode())
+            page_id=self.add(f'<< /Type /Page /Parent {pages} 0 R /MediaBox [0 0 {page_w:.4f} {page_h:.4f}] /Resources << /Font << /F1 {font} 0 R /F2 {fontb} 0 R >>{xobjects} >> /Contents {content_id} 0 R >>'.encode())
             kids.append(page_id)
         self.objects[pages]=f'<< /Type /Pages /Kids [{" ".join(str(x)+" 0 R" for x in kids)}] /Count {len(kids)} >>'.encode()
         self.objects[catalog]=f'<< /Type /Catalog /Pages {pages} 0 R >>'.encode()
@@ -500,10 +506,58 @@ class PDF:
         out.extend(f'trailer\n<< /Size {len(offsets)} /Root {catalog} 0 R >>\nstartxref\n{xref}\n%%EOF\n'.encode())
         return bytes(out)
 
-def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
+
+# Formatos raster suportados para miniaturas dos anexos nas folhas adicionais.
+# Os originais permanecem intactos no banco e nos downloads do pedido.
+PHOTO_MIMES = ('image/jpeg','image/png','image/webp','image/gif','image/bmp')
+PHOTO_LIMIT_PER_OS = 12
+
+def load_os_photos(oid, color='color'):
+    """Carrega até 12 fotos por OS, sem trazer arquivos CDR/PDF nem os originais enormes.
+    Cada foto gera um JPEG redimensionado, com metadados EXIF removidos."""
+    from PIL import Image, ImageOps, UnidentifiedImageError
+    Image.MAX_IMAGE_PIXELS = 36_000_000
+    photos=[]
+    with connect() as db:
+        rows=db.execute("""SELECT id,filename,size FROM attachments
+            WHERE order_id=? AND LOWER(content_type) IN (?,?,?,?,?)
+            ORDER BY created_at,id LIMIT ?""",
+            (oid,*PHOTO_MIMES,PHOTO_LIMIT_PER_OS)).fetchall()
+        for row in rows:
+            if row['size']>20*1024*1024:continue
+            stored=db.execute('SELECT data FROM attachments WHERE id=?',(row['id'],)).fetchone()
+            if not stored:continue
+            try:
+                with Image.open(io.BytesIO(bytes(stored['data']))) as original:
+                    if original.width*original.height>36_000_000:
+                        continue
+                    original.seek(0)  # GIF animado: apenas primeiro quadro.
+                    pic=ImageOps.exif_transpose(original)
+                    pic.thumbnail((1400,1400),Image.Resampling.LANCZOS)
+                    if 'A' in pic.getbands() or ('transparency' in pic.info):
+                        rgba=pic.convert('RGBA')
+                        back=Image.new('RGB',rgba.size,'white')
+                        back.paste(rgba,mask=rgba.getchannel('A'))
+                        pic=back
+                    pic=pic.convert('L' if color=='bw' else 'RGB')
+                    out=io.BytesIO()
+                    pic.save(out,format='JPEG',quality=78,optimize=True)
+                    photos.append({'name':str(row['filename'])[:120],
+                        'width':pic.width,'height':pic.height,
+                        'gray':color=='bw','data':out.getvalue()})
+            except (OSError,ValueError,UnidentifiedImageError,Image.DecompressionBombError):
+                continue
+    return photos
+
+def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos=(), photo_offset=0):
     INK='#2c316f';MUT='#6b7393';FRAME='#e0e4f0';PURP='#34378e';WHITE='#ffffff'
     def rgb(h):
-        h=h.lstrip('#');return ' '.join(f'{int(h[i:i+2],16)/255:.3f}' for i in (0,2,4))
+        h=h.lstrip('#')
+        channels=[int(h[i:i+2],16) for i in (0,2,4)]
+        if color=='bw':
+            g=round(.299*channels[0]+.587*channels[1]+.114*channels[2])
+            channels=[g,g,g]
+        return ' '.join(f'{v/255:.3f}' for v in channels)
     def rect(cmd,x,y,w,h,fill=WHITE,stroke=None):
         xx=x*MM; yy=PH-(y+h)*MM
         if fill:cmd.append(f'{rgb(fill)} rg {xx:.2f} {yy:.2f} {w*MM:.2f} {h*MM:.2f} re f')
@@ -525,6 +579,13 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
     def panel(c,y,h):rect(c,10,y,128,h,WHITE,FRAME)
     try:png_logo=png_to_rgb_alpha(LOGO.read_bytes()) if LOGO.exists() else None
     except (ValueError,zlib.error,struct.error):png_logo=None
+    if color=='bw' and png_logo is not None:
+        iw,ih,rgbbytes,alpha=png_logo
+        gray=bytearray(len(rgbbytes))
+        for k in range(0,len(rgbbytes),3):
+            v=round(.299*rgbbytes[k]+.587*rgbbytes[k+1]+.114*rgbbytes[k+2])
+            gray[k:k+3]=bytes((v,v,v))
+        png_logo=(iw,ih,bytes(gray),alpha)
     c=[]; header(c,'ORDEM DE SERVIÇO')
     panel(c,45,17)
     label(c,'Nº DA OS',14,51);text(c,order['code'] or order['id'][:9].upper(),14,58,9,INK,True)
@@ -557,6 +618,7 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
     label(c,'RECEBIDO',57,168);text(c,brl(order['received']),57,176,9,INK,True)
     label(c,'SALDO A RECEBER',97,168);text(c,brl(order['balance']),97,176,8.8,INK,True)
     text(c,'PAGAMENTO: '+order['payment'],14,179,6.1,MUT)
+    if photos:text(c,f'{len(photos)} FOTO(S) DO PEDIDO: VEJA AS FOLHAS SEGUINTES.',14,185.3,6.3,MUT,True)
     rect(c,12,190,54,.25,'#b9c0d6');rect(c,83,190,54,.25,'#b9c0d6')
     label(c,'RESPONSÁVEL / PRODUÇÃO',13,195);label(c,'ASSINATURA DO CLIENTE',85,195)
     text(c,'Gráfica Carvalho  •  Folha '+footer_label,11,205,6.1,MUT)
@@ -569,22 +631,41 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
             label(c,'PEDIDO: '+(order['code'] or order['id'][:8]),14,53)
             for j,s in enumerate(lines[i:i+27]):text(c,s,14,61+j*4.6,8.7)
             pages.append(c)
+    for i,photo in enumerate(photos):
+        c=[];header(c,'FOTO ANEXADA À ORDEM DE SERVIÇO')
+        panel(c,47,153)
+        label(c,'OS: '+str(order['code'] or order['id'][:8])+'  |  FOTO '+str(i+1)+' DE '+str(len(photos)),14,54)
+        filename=pdf_wrap(photo['name'],120*MM,7.3)
+        for row,line in enumerate(filename[:2]):
+            text(c,line,14,62+row*4,7.3,INK)
+        w,h=photo['width'],photo['height']
+        box_w,box_h=120*MM,121*MM
+        scale=min(box_w/w,box_h/h)
+        ww,hh=w*scale,h*scale
+        x=14*MM+(box_w-ww)/2
+        y=(PH-(77*MM+box_h))+(box_h-hh)/2
+        c.append(f'q {ww:.2f} 0 0 {hh:.2f} {x:.2f} {y:.2f} cm /Foto{photo_offset+i} Do Q')
+        text(c,'Imagem ilustrativa do arquivo anexado ao pedido.',14,196,6.2,MUT)
+        pages.append(c)
     return pages,png_logo
 
-def make_pdf(order, mode='a5'):
+def make_pdf(order, mode='a5', color='color'):
     """Uma OS em A5 real ou uma OS ampliada para a folha A4 retrato."""
-    pages,logo=make_os_pages(order, 'A4 (210 x 297 mm)' if mode=='a4' else 'A5 (148 x 210 mm)')
+    if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
+    photos=load_os_photos(order['id'],color)
+    pages,logo=make_os_pages(order, 'A4 (210 x 297 mm)' if mode=='a4' else 'A5 (148 x 210 mm)',
+                             color=color,photos=photos)
     if mode=='a5':
-        return PDF().build(pages,logo)
+        return PDF().build(pages,logo,extra_images=photos)
     if mode=='a4':
         # O A4 tem a mesma proporção ISO da A5, escalado 141,4%.
         scale=A4_H/PH
         shift=(A4_W-PW*scale)/2
         bigger=[[f'q {scale:.8f} 0 0 {scale:.8f} {shift:.4f} 0 cm',*c,'Q'] for c in pages]
-        return PDF().build(bigger,logo,page_w=A4_W,page_h=A4_H)
+        return PDF().build(bigger,logo,page_w=A4_W,page_h=A4_H,extra_images=photos)
     raise AppError(422,'Formato de impressão inválido.')
 
-def make_pdf_double(first,second):
+def make_pdf_double(first,second,color='color'):
     """Duas OS distintas, 148 x 210 mm cada, lado a lado em A4 horizontal.
 
     O A4 mede 297 x 210 mm, deixando 0,5 mm de espaço central total
@@ -593,8 +674,11 @@ def make_pdf_double(first,second):
     """
     if first['id']==second['id']:
         raise AppError(422,'Escolha duas ordens de serviço diferentes.')
-    left,logo=make_os_pages(first)
-    right,_=make_os_pages(second)
+    if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
+    images_left=load_os_photos(first['id'],color)
+    images_right=load_os_photos(second['id'],color)
+    left,logo=make_os_pages(first,color=color,photos=images_left)
+    right,_=make_os_pages(second,color=color,photos=images_right,photo_offset=len(images_left))
     # Cada uma fica centralizada em sua metade de A4 (148,5 mm).
     margin=(A4_LAND_W/2-PW)/2
     pages=[]
@@ -608,7 +692,7 @@ def make_pdf_double(first,second):
         x=A4_LAND_W/2
         cmds.append(f'q 0.78 0.80 0.86 RG 0.5 w [3 4] 0 d {x:.3f} 3 m {x:.3f} {A4_LAND_H-3:.3f} l S Q')
         pages.append(cmds)
-    return PDF().build(pages,logo,page_w=A4_LAND_W,page_h=A4_LAND_H)
+    return PDF().build(pages,logo,page_w=A4_LAND_W,page_h=A4_LAND_H,extra_images=images_left+images_right)
 
 def brl(v):return 'R$ '+f'{v:,.2f}'.replace(',','@').replace('.',',').replace('@','.')
 def format_date(d):
@@ -834,6 +918,9 @@ class Handler(BaseHTTPRequestHandler):
             mode=param('mode','a4')
             id1=param('id1')
             id2=param('id2')
+            color=param('color','color')
+            if color not in ('color','bw'):
+                raise AppError(422,'Selecione colorido ou preto e branco.')
             if not re.fullmatch(r'[a-fA-F0-9]{32}',id1):
                 raise AppError(422,'Selecione a primeira ordem de serviço.')
             if mode not in ('a4','a5','dupla'):
@@ -846,12 +933,12 @@ class Handler(BaseHTTPRequestHandler):
                 first=fetch_order(db,id1)
                 second=fetch_order(db,id2) if mode=='dupla' else None
             if mode=='dupla':
-                pdf=make_pdf_double(first,second)
-                filename='OS_DUAS_A5_EM_A4_HORIZONTAL.pdf'
+                pdf=make_pdf_double(first,second,color=color)
+                filename='OS_DUAS_A5_EM_A4_HORIZONTAL_'+('PB' if color=='bw' else 'COLORIDA')+'.pdf'
             else:
-                pdf=make_pdf(first,mode)
+                pdf=make_pdf(first,mode,color=color)
                 code=re.sub('[^A-Za-z0-9_-]','_',first['code'] or id1[:10])[:45]
-                filename=f'OS_{code}_{mode.upper()}.pdf'
+                filename=f'OS_{code}_{mode.upper()}_{"PB" if color=="bw" else "COLORIDA"}.pdf'
             disp='inline' if param('visualizar')=='1' else 'attachment'
             return self.reply(200,pdf,'application/pdf',{
                 'Content-Disposition':f'{disp}; filename="{filename}"'})
@@ -887,9 +974,11 @@ class Handler(BaseHTTPRequestHandler):
                     return self.reply(201,store_attachments(oid,files))
             elif sub=='pdf' and method=='GET':
                 with connect() as db:data=fetch_order(db,oid)
-                b=make_pdf(data)
+                color=param('color','color')
+                if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
+                b=make_pdf(data,color=color)
                 code=re.sub('[^A-Za-z0-9_-]','_',data['code'] or oid[:10])[:48]
-                return self.reply(200,b,'application/pdf',{'Content-Disposition':f'attachment; filename="OS_{code}_A5.pdf"'})
+                return self.reply(200,b,'application/pdf',{'Content-Disposition':f'attachment; filename="OS_{code}_A5_{'PB' if color=='bw' else 'COLORIDA'}.pdf"'})
         m=re.fullmatch(r'/api/attachments/([a-fA-F0-9]{32})(?:/(preview|download))?',path)
         if m:
             aid,sub=m.groups()
