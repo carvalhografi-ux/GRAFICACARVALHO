@@ -597,23 +597,46 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos
     name_lines=pdf_wrap(order['client'],120*MM,11)
     text(c,name_lines[0],14,78,10.5,INK,True)
     label(c,'TELEFONE / WHATSAPP',14,84);text(c,order['phone'] or 'Não informado',53,84,8)
-    panel(c,91,33)
-    label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
-    service_lines=pdf_wrap(order['service'],119*MM,9.3)
-    for i,line in enumerate(service_lines[:3]):text(c,line,14,104+i*5,9.3)
-    rect(c,14,115.5,120,.3,FRAME)
-    label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
-    label(c,'PRIORIDADE',45,119.5);text(c,order['priority'],69,119.5,7.8,INK,True)
-    label(c,'SITUAÇÃO',101,118);text(c,order['status'],101,122,6.8,INK,True)
-    panel(c,127,32)
-    label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
-    notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
-    for i,line in enumerate(notes[:4]):text(c,line,14,141+i*4.3,8.4)
-    extra=[]
-    if len(name_lines)>1:extra.append('CLIENTE: '+order['client'])
-    if len(service_lines)>3:extra.append('SERVIÇO: '+order['service'])
-    if len(notes)>4:extra+=['OBSERVAÇÕES (continuação):']+notes[4:]
-    if extra:text(c,'Mais detalhes na próxima página.',14,156.5,6.2,MUT)
+    photo=photos[0] if photos else None
+    if photo:
+        rect(c,10,91,76,68,WHITE,FRAME)
+        rect(c,89,91,49,68,WHITE,FRAME)
+        label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
+        service_lines=pdf_wrap(order['service'],68*MM,8.2)
+        for i,part in enumerate(service_lines[:5]):
+            text(c,part,14,104+i*4.35,8.0)
+        rect(c,14,127,68,.3,FRAME)
+        label(c,'QTD.',14,132);text(c,order['quantity'],14,138,7.3,INK,True)
+        label(c,'PRIORIDADE',34,132);text(c,order['priority'][:13],34,138,7,INK,True)
+        label(c,'SITUAÇÃO',61,132);text(c,order['status'][:12],61,138,6.2,INK,True)
+        rect(c,14,140,68,.3,FRAME)
+        notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',68*MM,7.8)
+        label(c,'OBSERVAÇÕES' if len(notes)<=2 else 'OBSERVAÇÕES (RESUMO)',14,145)
+        for i,part in enumerate(notes[:2]):text(c,part,14,151+i*4,7.6)
+        label(c,'IMAGEM DO PEDIDO',93,98)
+        rect(c,93,101,41,46,'#f8f9fc',FRAME)
+        factor=min(41*MM/photo['width'],46*MM/photo['height'])
+        w,h=photo['width']*factor,photo['height']*factor
+        x=93*MM+(41*MM-w)/2
+        y=PH-101*MM-(46*MM-h)/2-h
+        c.append(f'q {w:.2f} 0 0 {h:.2f} {x:.2f} {y:.2f} cm /Foto{photo_offset} Do Q')
+        for i,part in enumerate(pdf_wrap(photo['name'],41*MM,6.3)[:2]):
+            text(c,part,93,152+i*3.2,6.2,MUT)
+    else:
+        panel(c,91,33)
+        label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
+        service_lines=pdf_wrap(order['service'],119*MM,9.3)
+        for i,part in enumerate(service_lines[:3]):text(c,part,14,104+i*5,9.3)
+        rect(c,14,115.5,120,.3,FRAME)
+        label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
+        label(c,'PRIORIDADE',45,119.5);text(c,order['priority'][:16],69,119.5,7.8,INK,True)
+        label(c,'SITUAÇÃO',101,118);text(c,order['status'][:15],101,122,6.8,INK,True)
+        panel(c,127,32)
+        label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
+        notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
+        for i,part in enumerate(notes[:4]):text(c,part,14,141+i*4.3,8.4)
+    if len(name_lines)>1 or len(service_lines)>(5 if photo else 3) or len(notes)>(2 if photo else 4):
+        text(c,'Informações extensas: consulte o pedido completo no sistema.',14,160.4,5.2,MUT)
     panel(c,162,18)
     label(c,'VALOR TOTAL',14,168);text(c,brl(order['total']),14,176,9.2,INK,True)
     label(c,'RECEBIDO',57,168);text(c,brl(order['received']),57,176,9,INK,True)
