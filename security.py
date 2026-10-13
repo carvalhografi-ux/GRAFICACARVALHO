@@ -6,7 +6,8 @@ import hashlib
 import hmac
 import os
 import secrets
-import sqlite3
+import database
+import psycopg
 import time
 import uuid
 from contextlib import contextmanager
@@ -15,7 +16,6 @@ from pathlib import Path
 
 SESSION_SECONDS = 8 * 60 * 60
 COOKIE = 'gc_session'
-DATABASE = None
 
 class AuthError(Exception):
     def __init__(self, status, message):
@@ -23,12 +23,10 @@ class AuthError(Exception):
         self.message=message
         super().__init__(message)
 
-def setup(db_path):
-    global DATABASE
-    DATABASE = Path(db_path)
+def setup():
     with db() as c:
         c.execute('''CREATE TABLE IF NOT EXISTS app_users (
-            id TEXT PRIMARY KEY, email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+            id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL, password_hash TEXT NOT NULL,
             role TEXT NOT NULL CHECK(role IN ('admin','staff','client')),
             client_id TEXT, active INTEGER NOT NULL DEFAULT 1,
@@ -39,6 +37,7 @@ def setup(db_path):
             csrf_token TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL
         )''')
         c.execute('CREATE INDEX IF NOT EXISTS ix_sessions_expiry ON app_sessions(expires_at)')
+        c.execute('CREATE UNIQUE INDEX IF NOT EXISTS ux_app_users_email_lower ON app_users(LOWER(email))')
         c.execute('''CREATE TABLE IF NOT EXISTS login_failures (
             login_key TEXT PRIMARY KEY, failures INTEGER NOT NULL, first_at INTEGER NOT NULL, locked_until INTEGER NOT NULL DEFAULT 0
         )''')
@@ -53,20 +52,7 @@ def setup(db_path):
                   (user_id,email,'Administrador',password_hash(pwd),'admin',None,1,int(time.time()),int(time.time())))
         c.execute('DELETE FROM app_sessions WHERE expires_at<?',(int(time.time()),))
 
-@contextmanager
-def db():
-    c=sqlite3.connect(str(DATABASE),timeout=20)
-    c.row_factory=sqlite3.Row
-    c.execute('PRAGMA foreign_keys=ON')
-    c.execute('PRAGMA busy_timeout=20000')
-    try:
-        yield c
-        c.commit()
-    except Exception:
-        c.rollback()
-        raise
-    finally:
-        c.close()
+db = database.connect
 
 def password_hash(value):
     salt=secrets.token_bytes(16)
@@ -159,7 +145,7 @@ def logout(headers):
 
 def list_users():
     with db() as c:
-        return [public_user(u) for u in c.execute('SELECT * FROM app_users ORDER BY CASE role WHEN "admin" THEN 0 WHEN "staff" THEN 1 ELSE 2 END,name COLLATE NOCASE')]
+        return [public_user(u) for u in c.execute("SELECT * FROM app_users ORDER BY CASE role WHEN 'admin' THEN 0 WHEN 'staff' THEN 1 ELSE 2 END,LOWER(name)")]
 
 def create_user(payload):
     if not isinstance(payload,dict):raise AuthError(422,'Dados inválidos.')
@@ -178,7 +164,7 @@ def create_user(payload):
         try:
             uid=uuid.uuid4().hex;t=int(time.time())
             c.execute('INSERT INTO app_users VALUES (?,?,?,?,?,?,?,?,?)',(uid,email,name,password_hash(pwd),role,cid,1,t,t))
-        except sqlite3.IntegrityError:raise AuthError(409,'Este e-mail já está cadastrado.')
+        except psycopg.IntegrityError:raise AuthError(409,'Este e-mail já está cadastrado.')
         return public_user(c.execute('SELECT * FROM app_users WHERE id=?',(uid,)).fetchone())
 
 def update_user(uid,payload,actor_id):
