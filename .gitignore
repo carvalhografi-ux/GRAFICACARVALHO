@@ -1,0 +1,19 @@
+# Dados privados e credenciais - nunca versionar
+/data/
+data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.db-journal
+.env
+.env.*
+!.env.example
+*backup*.json
+*Backup*.json
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
