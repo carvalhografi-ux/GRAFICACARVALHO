@@ -628,7 +628,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         # Política CORS restrita à origem HTTPS explicitamente configurada.
         origin=self.headers.get('Origin','').rstrip('/')
-        if self.wix_origin() and origin==self.wix_origin():
+        if origin in self.allowed_origins():
             self.send_header('Access-Control-Allow-Origin',origin)
             self.send_header('Vary','Origin')
             self.send_header('Access-Control-Allow-Methods','GET, POST, PUT, DELETE, OPTIONS')
@@ -680,9 +680,17 @@ class Handler(BaseHTTPRequestHandler):
         if origin and not origin.startswith('https://'):
             return ''
         return origin
+    @staticmethod
+    def allowed_origins():
+        # Mantém o endereço Wix antigo e o novo endereço gratuito do painel.
+        # Não se usa '*' para liberar origens arbitrárias.
+        return {origin for origin in (
+            Handler.wix_origin(),
+            'https://grafica-carvalho.onrender.com'
+        ) if origin}
     def do_OPTIONS(self):
         origin=self.headers.get('Origin','').rstrip('/')
-        if not self.path.startswith('/api/') or not origin or origin!=self.wix_origin():
+        if not self.path.startswith('/api/') or not origin or origin not in self.allowed_origins():
             return self.reply(403,{'detail':'Origem não autorizada.'})
         return self.reply(204,b'')
     def do_GET(self):self.guard('GET')
@@ -713,7 +721,7 @@ class Handler(BaseHTTPRequestHandler):
                 from urllib.parse import urlsplit
                 actual=urlsplit(origin)
                 host=self.headers.get('Host','')
-                if actual.scheme not in ('http','https') or (actual.netloc.lower()!=host.lower() and origin.rstrip('/')!=self.wix_origin()):
+                if actual.scheme not in ('http','https') or (actual.netloc.lower()!=host.lower() and origin.rstrip('/') not in self.allowed_origins()):
                     raise security.AuthError(403,'Origem da solicitação não autorizada.')
         if path=='/login':
             if method!='GET':raise AppError(405,'Método não permitido.')
