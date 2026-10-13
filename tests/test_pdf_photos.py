@@ -85,5 +85,31 @@ class PdfOsTests(unittest.TestCase):
                 found+=1
         self.assertGreater(found,5)
 
+    def test_original_jpeg_from_database_is_embedded_and_resized(self):
+        from contextlib import contextmanager
+        raw=jpg_bytes('RGB')
+        class Db:
+            def execute(self,sql,args):
+                class Cursor:
+                    def __init__(self,content):self.content=content
+                    def fetchall(self):return self.content
+                    def fetchone(self):return self.content
+                if 'SELECT id,filename,size FROM attachments' in sql:
+                    return Cursor([{'id':'f'*32,'filename':'foto_cliente.jpg','size':len(raw)}])
+                if 'SELECT data FROM attachments' in sql:
+                    return Cursor({'data':raw})
+                raise AssertionError('Consulta inesperada')
+        @contextmanager
+        def fake_connect():
+            yield Db()
+        with mock.patch.object(app,'connect',fake_connect):
+            photos=app.load_os_photos('a'*32,'bw')
+        self.assertEqual(len(photos),1)
+        self.assertEqual(photos[0]['name'],'foto_cliente.jpg')
+        self.assertTrue(photos[0]['gray'])
+        with Image.open(io.BytesIO(photos[0]['data'])) as jpeg:
+            self.assertEqual(jpeg.mode,'L')
+            self.assertEqual(jpeg.size,(100,80))
+
 if __name__=='__main__':
     unittest.main()
