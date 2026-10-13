@@ -90,8 +90,11 @@ def enqueue(payload,user_id,fetch_order,make_pdf,make_pdf_double):
             raise PrintError(409,'Impressora nao configurada no agente Windows.')
         first=fetch_order(db,id1)
         second=fetch_order(db,id2) if mode=='dupla' else None
-        pdf=make_pdf_double(first,second) if second is not None else make_pdf(first,mode)
-        if not pdf.startswith(b'%PDF-') or len(pdf)>5*1024*1024:
+        color=payload.get('color','color')
+        if color not in ('color','bw'):
+            raise PrintError(422,'Selecione colorido ou preto e branco.')
+        pdf=make_pdf_double(first,second,color=color) if second is not None else make_pdf(first,mode,color=color)
+        if not pdf.startswith(b'%PDF-') or len(pdf)>24*1024*1024:
             raise PrintError(413,'PDF invalido ou muito grande.')
         job_id=uuid.uuid4().hex
         db.execute("""INSERT INTO gc_print_jobs
