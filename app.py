@@ -545,6 +545,7 @@ def load_os_photos(oid, color='color'):
                     photos.append({'name':str(row['filename'])[:120],
                         'width':pic.width,'height':pic.height,
                         'gray':color=='bw','data':out.getvalue()})
+                    break  # A OS exibe somente a primeira imagem válida.
             except (OSError,ValueError,UnidentifiedImageError,Image.DecompressionBombError):
                 continue
     return photos
@@ -596,63 +597,61 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos
     name_lines=pdf_wrap(order['client'],120*MM,11)
     text(c,name_lines[0],14,78,10.5,INK,True)
     label(c,'TELEFONE / WHATSAPP',14,84);text(c,order['phone'] or 'Não informado',53,84,8)
-    panel(c,91,33)
-    label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
-    service_lines=pdf_wrap(order['service'],119*MM,9.3)
-    for i,line in enumerate(service_lines[:3]):text(c,line,14,104+i*5,9.3)
-    rect(c,14,115.5,120,.3,FRAME)
-    label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
-    label(c,'PRIORIDADE',45,119.5);text(c,order['priority'],69,119.5,7.8,INK,True)
-    label(c,'SITUAÇÃO',101,118);text(c,order['status'],101,122,6.8,INK,True)
-    panel(c,127,32)
-    label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
-    notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
-    for i,line in enumerate(notes[:4]):text(c,line,14,141+i*4.3,8.4)
-    extra=[]
-    if len(name_lines)>1:extra.append('CLIENTE: '+order['client'])
-    if len(service_lines)>3:extra.append('SERVIÇO: '+order['service'])
-    if len(notes)>4:extra+=['OBSERVAÇÕES (continuação):']+notes[4:]
-    if extra:text(c,'Mais detalhes na próxima página.',14,156.5,6.2,MUT)
+    photo=photos[0] if photos else None
+    if photo:
+        rect(c,10,91,76,68,WHITE,FRAME)
+        rect(c,89,91,49,68,WHITE,FRAME)
+        label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
+        service_lines=pdf_wrap(order['service'],68*MM,8.2)
+        for i,part in enumerate(service_lines[:5]):
+            text(c,part,14,104+i*4.35,8.0)
+        rect(c,14,127,68,.3,FRAME)
+        label(c,'QTD.',14,132);text(c,order['quantity'],14,138,7.3,INK,True)
+        label(c,'PRIORIDADE',34,132);text(c,order['priority'][:13],34,138,7,INK,True)
+        label(c,'SITUAÇÃO',61,132);text(c,order['status'][:12],61,138,6.2,INK,True)
+        rect(c,14,140,68,.3,FRAME)
+        notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',68*MM,7.8)
+        label(c,'OBSERVAÇÕES' if len(notes)<=2 else 'OBSERVAÇÕES (RESUMO)',14,145)
+        for i,part in enumerate(notes[:2]):text(c,part,14,151+i*4,7.6)
+        label(c,'IMAGEM DO PEDIDO',93,98)
+        rect(c,93,101,41,46,'#f8f9fc',FRAME)
+        factor=min(41*MM/photo['width'],46*MM/photo['height'])
+        w,h=photo['width']*factor,photo['height']*factor
+        x=93*MM+(41*MM-w)/2
+        y=PH-101*MM-(46*MM-h)/2-h
+        c.append(f'q {w:.2f} 0 0 {h:.2f} {x:.2f} {y:.2f} cm /Foto{photo_offset} Do Q')
+        for i,part in enumerate(pdf_wrap(photo['name'],41*MM,6.3)[:2]):
+            text(c,part,93,152+i*3.2,6.2,MUT)
+    else:
+        panel(c,91,33)
+        label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
+        service_lines=pdf_wrap(order['service'],119*MM,9.3)
+        for i,part in enumerate(service_lines[:3]):text(c,part,14,104+i*5,9.3)
+        rect(c,14,115.5,120,.3,FRAME)
+        label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
+        label(c,'PRIORIDADE',45,119.5);text(c,order['priority'][:16],69,119.5,7.8,INK,True)
+        label(c,'SITUAÇÃO',101,118);text(c,order['status'][:15],101,122,6.8,INK,True)
+        panel(c,127,32)
+        label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
+        notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
+        for i,part in enumerate(notes[:4]):text(c,part,14,141+i*4.3,8.4)
+    if len(name_lines)>1 or len(service_lines)>(5 if photo else 3) or len(notes)>(2 if photo else 4):
+        text(c,'Informações extensas: consulte o pedido completo no sistema.',14,160.4,5.2,MUT)
     panel(c,162,18)
     label(c,'VALOR TOTAL',14,168);text(c,brl(order['total']),14,176,9.2,INK,True)
     label(c,'RECEBIDO',57,168);text(c,brl(order['received']),57,176,9,INK,True)
     label(c,'SALDO A RECEBER',97,168);text(c,brl(order['balance']),97,176,8.8,INK,True)
     text(c,'PAGAMENTO: '+order['payment'],14,179,6.1,MUT)
-    if photos:text(c,f'{len(photos)} FOTO(S) DO PEDIDO: VEJA AS FOLHAS SEGUINTES.',14,185.3,6.3,MUT,True)
     rect(c,12,190,54,.25,'#b9c0d6');rect(c,83,190,54,.25,'#b9c0d6')
     label(c,'RESPONSÁVEL / PRODUÇÃO',13,195);label(c,'ASSINATURA DO CLIENTE',85,195)
     text(c,'Gráfica Carvalho  •  Folha '+footer_label,11,205,6.1,MUT)
     pages=[c]
-    if extra:
-        lines=[]
-        for paragraph in extra:lines.extend(pdf_wrap(paragraph,118*MM,9))
-        for i in range(0,len(lines),27):
-            c=[];header(c,'COMPLEMENTO DA ORDEM DE SERVIÇO');panel(c,46,155)
-            label(c,'PEDIDO: '+(order['code'] or order['id'][:8]),14,53)
-            for j,s in enumerate(lines[i:i+27]):text(c,s,14,61+j*4.6,8.7)
-            pages.append(c)
-    for i,photo in enumerate(photos):
-        c=[];header(c,'FOTO ANEXADA À ORDEM DE SERVIÇO')
-        panel(c,47,153)
-        label(c,'OS: '+str(order['code'] or order['id'][:8])+'  |  FOTO '+str(i+1)+' DE '+str(len(photos)),14,54)
-        filename=pdf_wrap(photo['name'],120*MM,7.3)
-        for row,line in enumerate(filename[:2]):
-            text(c,line,14,62+row*4,7.3,INK)
-        w,h=photo['width'],photo['height']
-        box_w,box_h=120*MM,121*MM
-        scale=min(box_w/w,box_h/h)
-        ww,hh=w*scale,h*scale
-        x=14*MM+(box_w-ww)/2
-        y=(PH-(77*MM+box_h))+(box_h-hh)/2
-        c.append(f'q {ww:.2f} 0 0 {hh:.2f} {x:.2f} {y:.2f} cm /Foto{photo_offset+i} Do Q')
-        text(c,'Imagem ilustrativa do arquivo anexado ao pedido.',14,196,6.2,MUT)
-        pages.append(c)
     return pages,png_logo
 
 def make_pdf(order, mode='a5', color='color'):
     """Uma OS em A5 real ou uma OS ampliada para a folha A4 retrato."""
     if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
-    photos=load_os_photos(order['id'],color)
+    photos=load_os_photos(order['id'],color)[:1]
     pages,logo=make_os_pages(order, 'A4 (210 x 297 mm)' if mode=='a4' else 'A5 (148 x 210 mm)',
                              color=color,photos=photos)
     if mode=='a5':
@@ -675,8 +674,8 @@ def make_pdf_double(first,second,color='color'):
     if first['id']==second['id']:
         raise AppError(422,'Escolha duas ordens de serviço diferentes.')
     if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
-    images_left=load_os_photos(first['id'],color)
-    images_right=load_os_photos(second['id'],color)
+    images_left=load_os_photos(first['id'],color)[:1]
+    images_right=load_os_photos(second['id'],color)[:1]
     left,logo=make_os_pages(first,color=color,photos=images_left)
     right,_=make_os_pages(second,color=color,photos=images_right,photo_offset=len(images_left))
     # Cada uma fica centralizada em sua metade de A4 (148,5 mm).
