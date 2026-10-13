@@ -2,6 +2,7 @@
 from __future__ import annotations
 import base64
 import security
+import print_queue
 from datetime import date, datetime
 from email.parser import BytesParser
 from email import policy
@@ -67,6 +68,7 @@ def init_db():
         normalize_existing_codes(db)
         migrate_order_clients(db)
         db.execute('CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_code ON orders(LOWER(code))')
+    print_queue.setup()
 
 CODE_RE=re.compile(r'^GC-(\d+)$',re.IGNORECASE)
 
@@ -690,6 +692,7 @@ class Handler(BaseHTTPRequestHandler):
     def guard(self,method):
         try:self.route(method)
         except security.AuthError as exc:self.reply(exc.status,{'detail':exc.message})
+        except print_queue.PrintError as exc:self.reply(exc.status,{'detail':exc.message})
         except AppError as exc:self.reply(exc.status,{'detail':exc.detail})
         except (BrokenPipeError,ConnectionResetError):pass
         except Exception as exc:
@@ -728,6 +731,16 @@ class Handler(BaseHTTPRequestHandler):
                 result['access_token']=token
                 return self.reply(200,result)
             return self.reply(200,result,extra={'Set-Cookie':security.secure_cookie(token,secure)})
+        # O agente local consulta o servidor por HTTPS, sem abrir portas.
+        if path.startswith('/api/print-agent/'):
+            print_queue.agent_auth(self.headers)
+            if method=='POST' and path=='/api/print-agent/heartbeat':
+                return self.reply(200,print_queue.heartbeat(self.json_body(8192)))
+            if method=='GET' and path=='/api/print-agent/next':
+                return self.reply(200,print_queue.claim_next())
+            if method=='POST' and path=='/api/print-agent/report':
+                return self.reply(200,print_queue.report(self.json_body(8192)))
+            raise AppError(404,'Recurso do agente não encontrado.')
         user=security.session(self.headers)
         if path=='/api/auth/me' and method=='GET':
             if not user:return self.reply(200,{'authenticated':False})
@@ -784,6 +797,14 @@ class Handler(BaseHTTPRequestHandler):
             security.require_role(user,('admin',))
 
         if method=='GET' and path=='/static/logo_carvalho.png':return self.reply(200,LOGO.read_bytes(),'image/png')
+        if path=='/api/print/status' and method=='GET':
+            return self.reply(200, print_queue.status())
+        if path=='/api/print/agent/key' and method=='POST':
+            security.require_role(user,('admin',))
+            return self.reply(200, print_queue.rotate_key())
+        if path=='/api/print/jobs' and method=='POST':
+            return self.reply(201, print_queue.enqueue(
+                self.json_body(8192), user['id'], fetch_order, make_pdf, make_pdf_double))
         if path=='/api/clients' and method=='GET':return self.reply(200,list_clients(param('search')))
         if path=='/api/clients' and method=='POST':return self.reply(201,create_client(self.json_body()))
         if path=='/api/next-code' and method=='GET':
@@ -807,7 +828,7 @@ class Handler(BaseHTTPRequestHandler):
             id2=param('id2')
             if not re.fullmatch(r'[a-fA-F0-9]{32}',id1):
                 raise AppError(422,'Selecione a primeira ordem de serviço.')
-            if mode not in ('a4','dupla'):
+            if mode not in ('a4','a5','dupla'):
                 raise AppError(422,'Escolha uma modalidade de impressão válida.')
             if mode=='dupla':
                 if not re.fullmatch(r'[a-fA-F0-9]{32}',id2):
@@ -820,9 +841,9 @@ class Handler(BaseHTTPRequestHandler):
                 pdf=make_pdf_double(first,second)
                 filename='OS_DUAS_A5_EM_A4_HORIZONTAL.pdf'
             else:
-                pdf=make_pdf(first,'a4')
+                pdf=make_pdf(first,mode)
                 code=re.sub('[^A-Za-z0-9_-]','_',first['code'] or id1[:10])[:45]
-                filename=f'OS_{code}_A4.pdf'
+                filename=f'OS_{code}_{mode.upper()}.pdf'
             disp='inline' if param('visualizar')=='1' else 'attachment'
             return self.reply(200,pdf,'application/pdf',{
                 'Content-Disposition':f'{disp}; filename="{filename}"'})
