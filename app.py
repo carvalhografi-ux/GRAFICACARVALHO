@@ -642,35 +642,10 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos
     label(c,'RECEBIDO',57,168);text(c,brl(order['received']),57,176,9,INK,True)
     label(c,'SALDO A RECEBER',97,168);text(c,brl(order['balance']),97,176,8.8,INK,True)
     text(c,'PAGAMENTO: '+order['payment'],14,179,6.1,MUT)
-    if photos:text(c,f'{len(photos)} FOTO(S) DO PEDIDO: VEJA AS FOLHAS SEGUINTES.',14,185.3,6.3,MUT,True)
     rect(c,12,190,54,.25,'#b9c0d6');rect(c,83,190,54,.25,'#b9c0d6')
     label(c,'RESPONSÁVEL / PRODUÇÃO',13,195);label(c,'ASSINATURA DO CLIENTE',85,195)
     text(c,'Gráfica Carvalho  •  Folha '+footer_label,11,205,6.1,MUT)
     pages=[c]
-    if extra:
-        lines=[]
-        for paragraph in extra:lines.extend(pdf_wrap(paragraph,118*MM,9))
-        for i in range(0,len(lines),27):
-            c=[];header(c,'COMPLEMENTO DA ORDEM DE SERVIÇO');panel(c,46,155)
-            label(c,'PEDIDO: '+(order['code'] or order['id'][:8]),14,53)
-            for j,s in enumerate(lines[i:i+27]):text(c,s,14,61+j*4.6,8.7)
-            pages.append(c)
-    for i,photo in enumerate(photos):
-        c=[];header(c,'FOTO ANEXADA À ORDEM DE SERVIÇO')
-        panel(c,47,153)
-        label(c,'OS: '+str(order['code'] or order['id'][:8])+'  |  FOTO '+str(i+1)+' DE '+str(len(photos)),14,54)
-        filename=pdf_wrap(photo['name'],120*MM,7.3)
-        for row,line in enumerate(filename[:2]):
-            text(c,line,14,62+row*4,7.3,INK)
-        w,h=photo['width'],photo['height']
-        box_w,box_h=120*MM,121*MM
-        scale=min(box_w/w,box_h/h)
-        ww,hh=w*scale,h*scale
-        x=14*MM+(box_w-ww)/2
-        y=(PH-(77*MM+box_h))+(box_h-hh)/2
-        c.append(f'q {ww:.2f} 0 0 {hh:.2f} {x:.2f} {y:.2f} cm /Foto{photo_offset+i} Do Q')
-        text(c,'Imagem ilustrativa do arquivo anexado ao pedido.',14,196,6.2,MUT)
-        pages.append(c)
     return pages,png_logo
 
 def make_pdf(order, mode='a5', color='color'):
