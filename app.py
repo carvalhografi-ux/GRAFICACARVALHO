@@ -1,8 +1,7 @@
-"""Gráfica Carvalho — servidor web Python para Render e Wix com autenticação e SQLite persistente."""
+"""Gráfica Carvalho — API Python no Render Free com dados persistidos em PostgreSQL Neon."""
 from __future__ import annotations
 import base64
 import security
-from contextlib import contextmanager
 from datetime import date, datetime
 from email.parser import BytesParser
 from email import policy
@@ -12,7 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
-import sqlite3
+import database
 import struct
 from threading import Timer
 from urllib.parse import parse_qs, quote, unquote, urlparse
@@ -23,9 +22,6 @@ import textwrap
 
 ROOT = Path(__file__).resolve().parent
 STATIC = ROOT / 'static'
-DATA = Path(os.environ.get('GRAFICA_DATA_DIR',str(ROOT/'data')))
-DATA.mkdir(parents=True,exist_ok=True)
-DB = DATA/'grafica_carvalho.db'
 LOGO = STATIC/'logo_carvalho.png'
 STATUS = {'Pendente','Em produção','Aguardando cliente','Concluído','Cancelado'}
 PRIORITIES = {'Normal','Alta','Urgente'}
@@ -37,20 +33,7 @@ class AppError(Exception):
         self.status=status
         self.detail=message
 
-@contextmanager
-def connect():
-    db=sqlite3.connect(DB,timeout=20)
-    db.row_factory=sqlite3.Row
-    db.execute('PRAGMA foreign_keys = ON')
-    db.execute('PRAGMA busy_timeout = 20000')
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+connect = database.connect
 
 def init_db():
     with connect() as db:
@@ -58,13 +41,13 @@ def init_db():
             id TEXT PRIMARY KEY, code TEXT NOT NULL DEFAULT '', client TEXT NOT NULL,
             phone TEXT NOT NULL DEFAULT '', service TEXT NOT NULL, quantity INTEGER NOT NULL DEFAULT 1,
             entry_date TEXT NOT NULL, due_date TEXT NOT NULL, priority TEXT NOT NULL DEFAULT 'Normal',
-            status TEXT NOT NULL DEFAULT 'Pendente', total REAL NOT NULL DEFAULT 0,
-            received REAL NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'Pendente', total DOUBLE PRECISION NOT NULL DEFAULT 0,
+            received DOUBLE PRECISION NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''')
         db.execute('''CREATE TABLE IF NOT EXISTS attachments (
             id TEXT PRIMARY KEY, order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
             filename TEXT NOT NULL, content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
-            size INTEGER NOT NULL, data BLOB NOT NULL, created_at TEXT NOT NULL)''')
+            size INTEGER NOT NULL, data BYTEA NOT NULL, created_at TEXT NOT NULL)''')
         db.execute('CREATE INDEX IF NOT EXISTS ix_orders_due ON orders(due_date,status)')
         db.execute('CREATE INDEX IF NOT EXISTS ix_attachments_order ON attachments(order_id)')
         db.execute('''CREATE TABLE IF NOT EXISTS clients (
@@ -72,17 +55,16 @@ def init_db():
           email TEXT NOT NULL DEFAULT '', document TEXT NOT NULL DEFAULT '',
           address TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '',
           created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''')
-        db.execute('CREATE INDEX IF NOT EXISTS ix_clients_name ON clients(name COLLATE NOCASE)')
-        if 'client_id' not in [c['name'] for c in db.execute('PRAGMA table_info(orders)')]:
-            db.execute('ALTER TABLE orders ADD COLUMN client_id TEXT')
+        db.execute('CREATE INDEX IF NOT EXISTS ix_clients_name ON clients(LOWER(name))')
+        db.execute('ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_id TEXT')
         db.execute('''CREATE TABLE IF NOT EXISTS order_counter (
           id INTEGER PRIMARY KEY CHECK (id = 1), last_num INTEGER NOT NULL DEFAULT 0)''')
-        db.execute('INSERT OR IGNORE INTO order_counter(id,last_num) VALUES (1,0)')
+        db.execute('INSERT INTO order_counter(id,last_num) VALUES (1,0) ON CONFLICT (id) DO NOTHING')
         # Migração sem apagar pedidos: preserva códigos antigos únicos.
         # Códigos antigos vazios ou repetidos recebem um novo número GC.
         normalize_existing_codes(db)
         migrate_order_clients(db)
-        db.execute('CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_code ON orders(code COLLATE NOCASE)')
+        db.execute('CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_code ON orders(LOWER(code))')
 
 CODE_RE=re.compile(r'^GC-(\d+)$',re.IGNORECASE)
 
@@ -97,11 +79,11 @@ def highwater(db):
 
 def next_code(db):
     # Deve ser chamado apenas dentro de uma transação de escrita.
-    num=int(db.execute('SELECT last_num FROM order_counter WHERE id=1').fetchone()[0])
+    num=int(db.execute('SELECT last_num FROM order_counter WHERE id=1 FOR UPDATE').fetchone()[0])
     while True:
         num+=1
         code=f'GC-{num:06d}'
-        if not db.execute('SELECT 1 FROM orders WHERE code=? COLLATE NOCASE',(code,)).fetchone():break
+        if not db.execute('SELECT 1 FROM orders WHERE LOWER(code)=LOWER(?)',(code,)).fetchone():break
     db.execute('UPDATE order_counter SET last_num=? WHERE id=1',(num,))
     return code
 
@@ -109,7 +91,7 @@ def normalize_existing_codes(db):
     maxnum=highwater(db)
     db.execute('UPDATE order_counter SET last_num=? WHERE id=1',(maxnum,))
     seen=set()
-    for row in db.execute('SELECT id,code FROM orders ORDER BY created_at ASC,rowid ASC').fetchall():
+    for row in db.execute('SELECT id,code FROM orders ORDER BY created_at ASC,id ASC').fetchall():
         code=(row['code'] or '').strip()
         if not code or code.casefold() in seen:
             code=next_code(db)
@@ -122,7 +104,7 @@ def migrate_order_clients(db):
     # Importa nomes antigos para o cadastro sem alterar pedidos.
     for o in db.execute('SELECT id,client,phone,client_id FROM orders ORDER BY created_at').fetchall():
         if o['client_id'] and db.execute('SELECT 1 FROM clients WHERE id=?',(o['client_id'],)).fetchone():continue
-        found=db.execute('SELECT id FROM clients WHERE name=? COLLATE NOCASE AND phone=? LIMIT 1',(o['client'],o['phone'])).fetchone()
+        found=db.execute('SELECT id FROM clients WHERE LOWER(name)=LOWER(?) AND phone=? LIMIT 1',(o['client'],o['phone'])).fetchone()
         if found:cid=found['id']
         else:
             cid=uuid.uuid4().hex;stamp=now()
@@ -147,7 +129,7 @@ def client_detail(db,cid):
 def list_clients(search=''):
     with connect() as db:
         rows=[dict(x) for x in db.execute('''SELECT c.*,(SELECT COUNT(*) FROM orders o WHERE o.client_id=c.id) AS orders_count
-         FROM clients c ORDER BY name COLLATE NOCASE''')]
+         FROM clients c ORDER BY LOWER(name)''')]
     if search.strip():
         term=search.strip().casefold()
         rows=[r for r in rows if term in ' '.join(str(r[k]) for k in ('name','phone','email','document','address')).casefold()]
@@ -183,7 +165,7 @@ def attach_order_client(db, data, payload):
         data['phone']=c['phone']
     else:
         # Compatível com integrações e backups anteriores.
-        row=db.execute('SELECT id FROM clients WHERE name=? COLLATE NOCASE AND phone=? LIMIT 1',(data['client'],data['phone'])).fetchone()
+        row=db.execute('SELECT id FROM clients WHERE LOWER(name)=LOWER(?) AND phone=? LIMIT 1',(data['client'],data['phone'])).fetchone()
         if row:cid=row['id']
         else:
             cid=uuid.uuid4().hex;t=now()
@@ -275,7 +257,7 @@ def summary(day=None):
 def create_order(payload):
     data=validated(payload);oid=uuid.uuid4().hex;t=now()
     with connect() as db:
-        db.execute('BEGIN IMMEDIATE')
+        db.execute('SELECT last_num FROM order_counter WHERE id=1 FOR UPDATE')
         data=attach_order_client(db,data,payload)
         data['code']=next_code(db)  # emitido na gravação, nunca confiamos no código enviado pelo navegador
         db.execute('''INSERT INTO orders (id,code,client,client_id,phone,service,quantity,entry_date,due_date,
@@ -375,7 +357,7 @@ def restore(raw):
     except (ValueError,KeyError,TypeError,AppError) as err:
         raise AppError(422,'Backup inválido: '+str(err))
     with connect() as db:
-        db.execute('BEGIN IMMEDIATE')
+        db.execute('SELECT last_num FROM order_counter WHERE id=1 FOR UPDATE')
         previous_high=max(highwater(db),backed_up_last_num)
         # Resolva conflitos ANTES do INSERT (o índice UNIQUE já existe no banco).
         max_num=previous_high
@@ -797,7 +779,7 @@ class Handler(BaseHTTPRequestHandler):
         if path=='/api/next-code' and method=='GET':
             with connect() as db:
                 estimated=highwater(db)+1
-                while db.execute('SELECT 1 FROM orders WHERE code=? COLLATE NOCASE',(f'GC-{estimated:06d}',)).fetchone():estimated+=1
+                while db.execute('SELECT 1 FROM orders WHERE LOWER(code)=LOWER(?)',(f'GC-{estimated:06d}',)).fetchone():estimated+=1
             return self.reply(200,{'next_code':f'GC-{estimated:06d}','note':'Prévia; o código definitivo é reservado ao salvar.'})
         mclient=re.fullmatch(r'/api/clients/([a-fA-F0-9]{32})',path)
         if mclient:
@@ -859,7 +841,7 @@ class Handler(BaseHTTPRequestHandler):
                 if method=='GET':
                     with connect() as db:
                         fetch_order(db,oid)
-                        arr=[dict(x) for x in db.execute('SELECT id,filename,content_type,size,created_at FROM attachments WHERE order_id=? ORDER BY created_at,rowid',(oid,)).fetchall()]
+                        arr=[dict(x) for x in db.execute('SELECT id,filename,content_type,size,created_at FROM attachments WHERE order_id=? ORDER BY created_at,id',(oid,)).fetchall()]
                     return self.reply(200,arr)
                 if method=='POST':
                     files=[(filename or 'arquivo',mime,blob) for field,filename,mime,blob in self.files(36*MAX_FILE+100000) if field=='files']
@@ -888,29 +870,15 @@ class Handler(BaseHTTPRequestHandler):
         raise AppError(404,'Página ou recurso não encontrado.')
 
 def main():
-    # Não subir no Render se o disco persistente não estiver realmente montado.
-    # SQLite e anexos usam /data; sem disco, seriam perdidos a cada reinício.
-    if os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_ID') or os.environ.get('GRAFICA_REQUIRE_PERSISTENT_DISK')=='1':
-        if DATA.resolve()!=Path('/data').resolve():
-            raise SystemExit('ERRO: defina GRAFICA_DATA_DIR=/data e monte o disco persistente em /data.')
-        def disk_is_mounted(path):
-            try:
-                if os.path.ismount(path):return True
-                with open('/proc/self/mountinfo', encoding='utf-8') as f:
-                    for line in f:
-                        fields=line.partition(' - ')[0].split()
-                        if len(fields)>4 and fields[4].replace('\\040',' ')==str(path):return True
-            except OSError:
-                pass
-            return False
-        if not disk_is_mounted(DATA.resolve()):
-            raise SystemExit('ERRO: disco persistente ausente em /data. Configure um serviço pago e adicione Persistent Disk no Render.')
+    # Render gratuito não tem disco persistente. PostgreSQL Neon é obrigatório
+    # em todas as leituras e gravações (inclusive sessões e anexos).
+    database.connection_string()
     init_db()
-    security.setup(DB)
+    security.setup()
     try:port=int(os.environ.get('PORT',os.environ.get('GRAFICA_PORT','8000')))
     except ValueError:port=8000
     host=os.environ.get('GRAFICA_BIND_HOST','0.0.0.0')
-    print(f'Gráfica Carvalho online: {host}:{port}; Banco SQLite: {DB}',flush=True)
+    print(f'Gráfica Carvalho: {host}:{port}; Banco: PostgreSQL externo (Neon)',flush=True)
     server=ThreadingHTTPServer((host,port),Handler)
     try:server.serve_forever()
     except KeyboardInterrupt:print('Sistema encerrado.')
