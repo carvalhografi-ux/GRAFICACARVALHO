@@ -1,0 +1,27 @@
+# Gráfica Carvalho — serviço Python na Render (Wix hospeda a interface)
+# Banco SQLite exige plano pago com disco persistente.
+services:
+  - type: web
+    name: grafica-carvalho-api
+    runtime: docker
+    plan: starter
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    disk:
+      name: grafica-carvalho-dados
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: GRAFICA_DATA_DIR
+        value: /data
+      - key: GRAFICA_REQUIRE_PERSISTENT_DISK
+        value: '1'
+      - key: GRAFICA_SECURE_COOKIES
+        value: '1'
+      - key: GRAFICA_WIX_ORIGIN
+        value: https://headless-fynqkyfsoyi-carvalhografi-140d.wix-site-host.com
+      - key: GRAFICA_ADMIN_EMAIL
+        sync: false
+      - key: GRAFICA_ADMIN_PASSWORD
+        sync: false

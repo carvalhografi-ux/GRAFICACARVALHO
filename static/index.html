@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#383a8f">
+<title>Gráfica Carvalho · Sistema de Serviços (Python)</title>
+<style>
+:root{--nav:#34358e;--nav2:#242663;--violet:#464ab0;--text:#222d4b;--muted:#75819a;--line:#e6e9f3;--bg:#f4f6fc;--card:#fff;--pink:#ee2a85;--cyan:#04a6e2;--yellow:#e8d12b;--green:#55b947;--shadow:0 12px 32px rgba(36,45,91,.06)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font:14px Inter,"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.65;cursor:wait}a{color:var(--violet);text-decoration:none}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #b6b6ff;outline-offset:2px}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);min-height:100vh}.aside{background:linear-gradient(174deg,#494bab 0%,#34378b 48%,#252663 100%);color:#fff;padding:25px 15px;display:flex;flex-direction:column;gap:24px}.brand{padding:17px 13px 15px;border:1px solid #ffffff29;background:#ffffff12;border-radius:16px}.brand img{width:100%;max-height:89px;object-fit:contain;display:block;filter:drop-shadow(0 7px 12px rgba(15,21,67,.22))}.brand small{display:block;margin-top:15px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;font-size:10px;color:#dce1ff}.nav-title{padding:0 12px;color:#bac5f9;font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;margin-bottom:9px}.nav{display:grid;gap:4px}.nav button{background:transparent;color:#e6e8ff;width:100%;border:1px solid transparent;display:flex;align-items:center;justify-content:space-between;text-align:left;border-radius:10px;padding:12px 11px;font-weight:600;font-size:12.5px;gap:6px}.nav button:hover{background:#ffffff15}.nav button.active{background:#ffffff25;color:#fff;border-color:#ffffff26}.nav .nav-left{display:flex;align-items:center;gap:10px}.nav .ico{font-size:17px;min-width:19px}.counter{font-size:10px;border-radius:20px;background:#11175048;padding:3px 7px;min-width:24px;text-align:center}.nav button.active .counter{background:#fff;color:var(--nav2)}.aside-foot{margin-top:auto;color:#e2e6ffb3;border:1px solid #ffffff22;border-radius:14px;background:#00000016;padding:15px;font-size:11px;line-height:1.65}.aside-foot b{display:block;color:#fff;font-size:12px;margin-bottom:5px}.dots{display:flex;gap:5px;margin-top:12px}.dots i{display:block;flex:1;height:4px;border-radius:8px}.main{padding:28px clamp(16px,2.6vw,42px) 34px;min-width:0;width:100%;margin:0 auto;max-width:1660px}.head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:19px;flex-wrap:wrap}.eyebrow{color:#6264a8;text-transform:uppercase;letter-spacing:1.55px;font-weight:850;font-size:10px}.head h1{font-size:27px;letter-spacing:-.7px;line-height:1.2;margin:7px 0 5px;color:#272c62}.head p{color:var(--muted);margin:0;font-size:12.5px}.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #dce2ed;border-radius:10px;padding:10px 13px;background:#fff;color:#3f4967;font-size:12px;font-weight:750;display:inline-flex;gap:7px;align-items:center;justify-content:center}.btn:hover{background:#f9faff;border-color:#bdc5df}.btn.primary{color:#fff;background:linear-gradient(135deg,#555ac1,#3a3e9b);border-color:#4c4fac;box-shadow:0 8px 20px #4147a528}.btn.primary:hover{filter:brightness(1.09)}.btn.danger{color:#b73c53}.mini-banner{border:1px solid #4f55ae;border-radius:16px;background:linear-gradient(110deg,#40429e,#34388d);color:#fff;padding:16px 20px;display:flex;gap:20px;justify-content:space-between;align-items:center;position:relative;overflow:hidden;margin-bottom:18px}.mini-banner::before{content:"";background:radial-gradient(circle,#05a9e744,transparent 70%);height:180px;width:250px;right:100px;position:absolute}.mini-banner>div{position:relative}.mini-banner b{font-size:15px;letter-spacing:-.1px}.mini-banner p{margin:5px 0 0;color:#e0e4ff;font-size:12px}.mini-banner .signal{font-size:11px;display:flex;align-items:center;gap:7px;color:#fff;font-weight:700;white-space:nowrap;background:#ffffff1b;border-radius:50px;padding:9px 11px}.signal span{display:block;height:8px;width:8px;background:#61db9d;border-radius:50%}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}.card{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:17px 17px 15px;position:relative;overflow:hidden}.card:before{content:"";position:absolute;inset:0 auto auto 0;height:3px;width:100%;background:var(--accent,#464ab0)}.card-label{font-size:11.5px;color:var(--muted);font-weight:650;display:flex;justify-content:space-between}.card-label span{font-size:15px}.card strong{display:block;margin-top:12px;font-size:25px;letter-spacing:-.55px;color:#283063}.card small{font-size:10.5px;color:#9ca7bc}.info{border:1px solid #dfe4f6;border-left:3px solid #565bc0;border-radius:10px;background:#f9faff;padding:12px 15px;color:#637089;font-size:11.5px;margin-bottom:18px;line-height:1.55}.panel{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:16px;overflow:hidden}.panel-head{padding:18px 19px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.panel-head h2{margin:0;font-size:16px;letter-spacing:-.2px;color:#2a305e}.panel-head p{margin:5px 0 0;color:#929bb0;font-size:11px}.date-control{display:flex;align-items:center;background:#f8f9fe;border:1px solid #dde3ed;border-radius:9px;overflow:hidden}.date-control button{background:none;border:0;color:#61699b;font-size:17px;padding:5px 9px}.date-control input{border:0;background:transparent;font-size:12px;font-weight:750;color:#3e466e;padding:9px 1px;width:133px}.search{height:37px;border:1px solid #dce3ed;border-radius:9px;padding:9px 12px;font-size:12px;width:202px}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:100%;min-width:980px;text-align:left;font-size:12px}th{background:#f8f9fd;padding:13px 14px;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#7c86a4;white-space:nowrap}td{padding:12px 14px;border-top:1px solid #eef0f7;vertical-align:middle}tbody tr:hover{background:#fdfdff}.client{font-weight:800;color:#2a3158}.sub{display:block;color:#8a94aa;font-size:10.5px;margin-top:4px}.service-cell{max-width:270px;white-space:normal;line-height:1.4;font-weight:650}.pill{display:inline-block;padding:5px 8px;font-weight:800;font-size:10px;border-radius:7px;white-space:nowrap}.pill.wait{color:#a97111;background:#fff3e0}.pill.prod{color:#3060b7;background:#eaf1ff}.pill.clientwait{color:#7656ae;background:#f3efff}.pill.done{color:#147e62;background:#e6f7ee}.pill.cancel{color:#687387;background:#f0f2f6}.pill.paid{color:#147e62;background:#e6f7ee}.pill.partial{color:#b4750c;background:#fff1da}.pill.unpaid{color:#b73a52;background:#ffedf0}.row-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:200px}.tiny{background:white;border:1px solid #dbe3ed;color:#4e5879;border-radius:7px;padding:6px 8px;font-size:10.5px;font-weight:750;white-space:nowrap}.tiny:hover{background:#f3f5ff}.tiny.os{background:#eef0ff;border-color:#d4d8f9;color:#4649a6}.value{font-weight:800;white-space:nowrap;color:#2c335a}.panel-foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;color:#919bb0;font-size:10.5px}.bottom-actions{margin-top:17px;display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}.footnote{font-size:10.5px;color:#8190a8;margin-top:16px;line-height:1.6}.empty{text-align:center;padding:55px 14px;color:#7f8ba3;font-size:12px}.empty b{display:block;margin-bottom:7px;font-size:15px;color:#3e4670}.empty .empty-ico{font-size:30px;margin-bottom:7px;display:block}
+dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px));box-shadow:0 25px 85px #18205369;max-height:94vh;color:var(--text)}dialog::backdrop{background:#131a3ea1}.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--line);padding:20px 22px;background:#fff}.modal-head h2{margin:0;font-size:19px;color:#2b3069}.modal-head p{margin:6px 0 0;color:#7b86a6;font-size:11.5px}.close{background:#f0f2f8;color:#5c6780;border:0;border-radius:8px;font-size:20px;height:32px;width:34px}.form-content{max-height:min(65vh,650px);overflow-y:auto;padding:19px 22px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field.full{grid-column:1 / -1}.field label{display:block;font-size:10.5px;font-weight:800;color:#67738f;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid #dce2ee;border-radius:9px;padding:11px 12px;background:#fff;color:#27314f;font-size:13px}.field textarea{min-height:80px;resize:vertical}.drop{border:2px dashed #a9b1df;background:#f8f9ff;border-radius:13px;text-align:center;padding:19px;transition:.2s}.drop.dragover{border-color:#5258bc;background:#edf0ff}.drop .paste{display:block;color:#323a84;font-weight:850;font-size:13px;margin-bottom:7px}.drop p{font-size:11px;color:#7a84a3;margin:0 0 10px}.file-grid{display:grid;gap:8px;margin-top:12px}.file-row{display:flex;align-items:center;gap:10px;background:#fafbff;border:1px solid #e7eaf4;border-radius:10px;padding:8px}.thumb{height:44px;width:48px;display:grid;place-items:center;overflow:hidden;flex-shrink:0;background:#eaecf5;border-radius:7px;color:#5b63a0;font-weight:850;font-size:10px}.thumb img{width:100%;height:100%;object-fit:cover}.file-desc{flex:1;min-width:0}.file-desc b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.file-desc small{color:#8995aa;font-size:10px}.modal-foot{padding:15px 22px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:7px}.modal-foot>div{display:flex;gap:8px}.toast{position:fixed;z-index:99;bottom:22px;right:22px;background:#303575;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 10px 30px #30357545;max-width:390px;display:none;font-size:12px}.toast.visible{display:block}.loading{opacity:.65;pointer-events:none}.brand-accent{height:3px;display:flex}.brand-accent i{height:100%;flex:1}
+@media(max-width:1180px){.app{grid-template-columns:215px 1fr}.main{padding:22px 17px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:750px){.app{display:block}.aside{padding:11px 13px;gap:10px}.brand{padding:9px 10px}.brand img{max-width:220px;max-height:54px}.brand small,.aside-foot,.nav-title{display:none}.nav{display:flex;overflow-x:auto;padding-bottom:4px}.nav button{width:auto;white-space:nowrap;flex-shrink:0}.main{padding:16px 11px}.head h1{font-size:23px}.mini-banner{padding:14px}.mini-banner .signal{display:none}.panel-head{padding:13px}.search{width:160px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.modal-head,.modal-foot{padding:15px}.form-content{padding:15px}}
+
+/* Centro de impressão: A4 cheio ou 2×A5 lado a lado */
+.print-dialog{width:min(700px,calc(100vw - 22px))}
+.print-content{padding:20px 22px;max-height:66vh;overflow:auto}
+.print-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-bottom:18px}
+.print-option{display:flex;gap:10px;align-items:flex-start;border:1.5px solid #e0e4f1;border-radius:13px;padding:14px;background:#fff;cursor:pointer;transition:.15s}
+.print-option:has(input:checked){border-color:#5257b8;background:#f4f5ff;box-shadow:0 0 0 2px #e8eafe}
+.print-option input{accent-color:#454aa5;margin:3px 0 0;flex-shrink:0}
+.print-option strong{display:block;color:#2b3268;font-size:13px;margin-bottom:4px}
+.print-option small{display:block;color:#7d87a0;font-size:11px;line-height:1.5}
+.print-layout{display:grid;grid-template-columns:minmax(0,1fr) 205px;gap:20px;align-items:start}
+.print-fields{display:grid;gap:13px}
+.print-fields label{display:block;font-size:11px;color:#596781;font-weight:800;margin-bottom:7px}
+.print-fields select{width:100%;border:1px solid #dce2ee;border-radius:9px;padding:11px;font-size:12px;color:#333b65;background:#fff}
+.print-preview{background:#f3f5fb;border:1px solid #e5e9f3;border-radius:13px;padding:14px;display:grid;place-items:center;min-height:205px}
+.print-sheet{display:flex;background:#fff;box-shadow:0 8px 25px #303d7c22;border:1px solid #d5ddec;position:relative}
+.print-sheet.a4{height:172px;width:121px;flex-direction:column;padding:12px}
+.print-sheet.dupla{height:120px;width:170px;padding:7px;align-items:center}
+.print-mini-os{flex:1;border:1px solid #e3e6f0;min-width:0;background:linear-gradient(180deg,#383a93 0 23%,#fff 23%);position:relative}
+.print-sheet.a4 .print-mini-os{height:100%;width:100%}
+.print-sheet.dupla .print-mini-os{height:100%;min-width:0}
+.print-mini-os:after{content:"";position:absolute;top:35%;left:11%;right:11%;height:39%;background:repeating-linear-gradient(to bottom,#e8e9f3 0 2px,#fff 2px 11px)}
+.print-sheet.dupla .print-mini-os+.print-mini-os{margin-left:2px}
+.print-sheet.dupla:before{content:"";position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed #9ca6bf;z-index:2}
+.print-preview-title{font-size:10px;font-weight:750;color:#657092;margin-top:10px;text-align:center}
+.print-note{background:#f7f8fd;color:#69758e;border-radius:9px;margin-top:18px;padding:11px 13px;font-size:11px;line-height:1.6}
+.print-foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding:15px 22px}
+@media(max-width:650px){.print-options,.print-layout{grid-template-columns:1fr}.print-preview{min-height:180px}.print-content{padding:15px}}
+
+/* Cadastro de clientes e códigos sequenciais */
+[hidden]{display:none !important}
+.field-help{display:block;color:#848fa7;font-size:10px;line-height:1.45;margin-top:6px}
+.field input[readonly]{background:#f1f3fa;color:#515a87;font-weight:750;cursor:default}
+.client-chooser{display:flex;gap:7px}.client-chooser select{min-width:0;flex:1}.client-chooser button{padding:7px 12px;flex:0 0 auto;font-size:18px}
+.clients-panel{margin-top:2px}.clients-table{min-width:710px}.clients-table .client-main{color:#2a3061;font-weight:800}.clients-table td{line-height:1.5}
+.clients-table .small-info{display:block;color:#8a96ae;font-size:10px}.clients-panel [data-client-edit]{color:#3a4299}
+@media(max-width:750px){.clients-panel .panel-head{align-items:flex-start}.clients-panel .filters{width:100%}.clients-panel .filters input{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="aside">
+  <div class="brand"><img src="/static/logo_carvalho.png" alt="Gráfica Carvalho — Comunicação Visual"><small>Sistema de gestão e produção</small></div>
+  <div><div class="nav-title">Área de trabalho</div><nav class="nav" id="nav">
+    <button type="button" class="active" data-view="hoje"><span class="nav-left"><span class="ico">▦</span>Pendentes do dia</span><span class="counter" data-count="hoje">0</span></button>
+    <button type="button" data-view="todos"><span class="nav-left"><span class="ico">☷</span>Todos os serviços</span><span class="counter" data-count="todos">0</span></button>
+    <button type="button" data-view="concluidos"><span class="nav-left"><span class="ico">✓</span>Concluídos</span><span class="counter" data-count="concluidos">0</span></button>
+    <button type="button" data-view="pagos"><span class="nav-left"><span class="ico">◉</span>Pagos</span><span class="counter" data-count="pagos">0</span></button>
+    <button type="button" data-view="parciais"><span class="nav-left"><span class="ico">◐</span>Parcialmente pagos</span><span class="counter" data-count="parciais">0</span></button>
+    <button type="button" data-view="naopagos"><span class="nav-left"><span class="ico">○</span>Não pagos</span><span class="counter" data-count="naopagos">0</span></button>
+    <button type="button" data-view="clientes"><span class="nav-left"><span class="ico">♙</span>Cadastro de clientes</span><span class="counter" id="clientCount">0</span></button>
+  </nav></div>
+  <div class="aside-foot"><div id="gcUserLabel" style="font-size:11px;font-weight:800;color:white;margin-bottom:8px">Sessão protegida</div><a id="gcAdminLink" href="/usuarios" hidden style="color:white;margin-bottom:12px;text-decoration:underline">⚙ Contas e permissões</a><a href="/conta" style="display:block;color:white;margin-bottom:12px;text-decoration:underline">🔒 Alterar minha senha</a><button type="button" onclick="gcLogout()" style="background:#ffffff18;border:1px solid #ffffff44;border-radius:8px;padding:9px;color:white;cursor:pointer;margin-bottom:12px">Sair da conta</button><b>✓ Pendências automáticas</b>Pedidos não concluídos continuam aparecendo nos dias seguintes à entrega prevista.<div class="dots"><i style="background:var(--cyan)"></i><i style="background:var(--pink)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i></div></div>
+</aside>
+<main class="main">
+<header class="head"><div><div class="eyebrow">GRÁFICA CARVALHO · COMUNICAÇÃO VISUAL</div><h1>Gestão de serviços</h1><p>Acompanhe produção, prazos, recebimentos e ordens de serviço.</p></div><div class="actions"><button class="btn" id="btnToday">Hoje</button><button class="btn primary" id="newClient" hidden>＋ Cadastrar cliente</button><button class="btn" id="btnPrint">▤ Imprimir OS</button><button class="btn primary" id="newOrder">＋ Novo serviço</button></div></header>
+<div id="ordersView"><div class="mini-banner"><div><b>Seu painel de produção, organizado em um só lugar.</b><p>Dados protegidos no servidor da Gráfica Carvalho · anexos por Ctrl+V · impressão A4 ou duas OS A5 em A4 horizontal.</p></div><div class="signal"><span></span>Sistema online · acesso restrito</div></div>
+<div class="cards"><div class="card" style="--accent:#eea443"><div class="card-label">Pendentes até a data <span>◷</span></div><strong id="statPending">0</strong><small>Serviços a entregar</small></div><div class="card" style="--accent:#05a9e0"><div class="card-label">Em produção <span>⚙</span></div><strong id="statProducing">0</strong><small>Em andamento e com prazo</small></div><div class="card" style="--accent:#52b88a"><div class="card-label">Concluídos <span>✓</span></div><strong id="statCompleted">0</strong><small>Serviços finalizados</small></div><div class="card" style="--accent:#ee4785"><div class="card-label">Saldo a receber <span>R$</span></div><strong id="statReceivable" style="font-size:21px">R$ 0,00</strong><small>Em todos os pedidos ativos</small></div></div>
+<div class="info">Os serviços com prazo até a <b>data selecionada</b> ficam em “Pendentes do dia” enquanto não forem concluídos ou cancelados. A pendência continua nos dias seguintes automaticamente.</div>
+<section class="panel"><div class="panel-head"><div><h2 id="viewTitle">Pendentes do dia</h2><p id="viewSub">Serviços não finalizados até a data selecionada</p></div><div class="filters"><div class="date-control"><button id="prevDay" aria-label="Dia anterior">‹</button><input id="day" type="date" aria-label="Selecionar data"><button id="nextDay" aria-label="Próximo dia">›</button></div><input class="search" id="search" type="search" placeholder="Pesquisar pedido ou cliente"></div></div>
+<div class="table-wrap"><table><thead><tr><th>Pedido / cliente</th><th>Serviço</th><th>Prazo</th><th>Produção</th><th>Pagamento</th><th>Total</th><th>Saldo</th><th>Ações</th></tr></thead><tbody id="rows"><tr><td colspan="8"><div class="empty">Carregando...</div></td></tr></tbody></table></div><div class="panel-foot"><span id="countLabel">0 pedidos</span><span>Atualizado a partir do banco de dados do Python.</span></div></section>
+<div class="bottom-actions"><button class="btn" id="csvExport">↓ Exportar CSV</button><button class="btn" id="backup">↓ Backup completo</button><button class="btn" id="restore">↑ Restaurar backup</button><input type="file" id="backupFile" accept="application/json,.json" hidden></div>
+<p class="footnote">💡 Copie uma imagem e pressione <b>Ctrl+V</b> para anexá-la ao serviço. Arquivos CDR, PSD, AI, PDF e outros formatos também podem ser enviados manualmente. O sistema é acessível somente no computador onde o Python estiver rodando; para abrir em outros aparelhos seria necessária uma configuração de rede.</p></div>
+<section id="clientsView" class="panel clients-panel" hidden>
+ <div class="panel-head"><div><h2>Cadastro de clientes</h2><p>Contatos organizados para agilizar novos pedidos.</p></div><div class="filters"><input type="search" id="clientSearch" class="search" placeholder="Buscar nome, telefone, CPF/CNPJ..."><button type="button" class="btn primary" id="addClientPanel">＋ Novo cliente</button></div></div>
+ <div class="table-wrap"><table class="clients-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Documento</th><th>Pedidos</th><th>Ações</th></tr></thead><tbody id="clientRows"><tr><td colspan="5">Carregando clientes...</td></tr></tbody></table></div>
+ <div class="panel-foot"><span id="clientsTotal">0 clientes</span><span>Cadastros armazenados no banco SQLite local.</span></div>
+</section>
+</main>
+</div>
+<dialog id="dialog"><form id="orderForm"><div class="modal-head"><div><h2 id="modalTitle">Novo serviço</h2><p>Para colar uma imagem do WhatsApp, Print Screen ou outro programa, pressione <b>Ctrl+V</b>.</p></div><button type="button" class="close" id="closeModal" aria-label="Fechar">×</button></div>
+<div class="form-content"><div class="form-grid">
+<div class="field"><label for="fCode">Código sequencial automático</label><input id="fCode" readonly placeholder="Gerado ao salvar" title="Código exclusivo e imutável, definido pelo servidor ao salvar"><small class="field-help">Reservado automaticamente ao salvar o pedido.</small></div>
+<div class="field"><label for="fClient">Cliente cadastrado *</label><div class="client-chooser"><select id="fClient" required><option value="">Selecione um cliente...</option></select><button type="button" id="addClientFromOrder" class="btn" title="Cadastrar novo cliente">＋</button></div><small class="field-help">Selecione um cliente ou clique em + para cadastrar.</small></div>
+<div class="field full"><label for="fService">Descrição do serviço *</label><input id="fService" required maxlength="300" placeholder="Banner 300 × 100 cm, placa, adesivo, cartão..."></div>
+<div class="field"><label for="fPhone">Telefone / WhatsApp</label><input id="fPhone" maxlength="50" readonly placeholder="Preenchido pelo cadastro do cliente"></div>
+<div class="field"><label for="fQty">Quantidade</label><input type="number" id="fQty" min="1" value="1" required></div>
+<div class="field"><label for="fEntry">Data do pedido *</label><input id="fEntry" type="date" required></div>
+<div class="field"><label for="fDue">Previsão de entrega *</label><input id="fDue" type="date" required></div>
+<div class="field"><label for="fPriority">Prioridade</label><select id="fPriority"><option>Normal</option><option>Alta</option><option>Urgente</option></select></div>
+<div class="field"><label for="fStatus">Situação</label><select id="fStatus"><option>Pendente</option><option>Em produção</option><option>Aguardando cliente</option><option>Concluído</option><option>Cancelado</option></select></div>
+<div class="field"><label for="fTotal">Valor total (R$) *</label><input id="fTotal" type="number" min="0" step="0.01" value="0" required></div>
+<div class="field"><label for="fReceived">Valor recebido (R$)</label><input id="fReceived" type="number" min="0" step="0.01" value="0"></div>
+<div class="field full"><label for="fNotes">Observações / acabamento</label><textarea id="fNotes" placeholder="Material, acabamento, medidas, instruções para produção..."></textarea></div>
+<div class="field full"><label>Anexos e referências de arte</label><div class="drop" id="drop"><span class="paste">⎘ Ctrl + V — Cole a imagem aqui</span><p>Ou arraste imagens e arquivos para cá · PNG, JPG, PSD, CDR, PDF, AI, SVG e outros.</p><button type="button" class="btn" id="chooseFiles">＋ Selecionar arquivos</button><input type="file" id="fileInput" multiple hidden></div><div id="pendingFiles" class="file-grid"></div><div id="savedFiles" class="file-grid"></div></div>
+</div></div><div class="modal-foot"><button type="button" class="btn danger" id="deleteOrder" style="display:none">Excluir pedido</button><div><button type="button" class="btn" id="cancelModal">Cancelar</button><button type="submit" class="btn primary" id="saveOrder">Salvar serviço</button></div></div></form></dialog>
+<dialog id="clientDialog" aria-labelledby="clientDialogTitle" class="client-modal"><form id="clientForm">
+<div class="modal-head"><div><h2 id="clientDialogTitle">Novo cliente</h2><p>Cadastre uma vez para reutilizar os dados em diferentes pedidos.</p></div><button type="button" class="close" id="closeClientDialog" aria-label="Fechar">×</button></div>
+<div class="form-content"><div class="form-grid">
+<div class="field full"><label for="cName">Nome / Razão social *</label><input id="cName" required maxlength="120" placeholder="Nome do cliente ou empresa"></div>
+<div class="field"><label for="cPhone">Telefone / WhatsApp</label><input id="cPhone" maxlength="50" placeholder="(86) 99999-9999"></div>
+<div class="field"><label for="cDocument">CPF ou CNPJ</label><input id="cDocument" maxlength="40" placeholder="Opcional"></div>
+<div class="field full"><label for="cEmail">E-mail</label><input id="cEmail" type="email" maxlength="150" placeholder="cliente@exemplo.com"></div>
+<div class="field full"><label for="cAddress">Endereço</label><input id="cAddress" maxlength="300" placeholder="Rua, número, bairro, cidade..."></div>
+<div class="field full"><label for="cNotes">Observações</label><textarea id="cNotes" maxlength="3000" placeholder="Preferências, informações relevantes..."></textarea></div>
+</div></div>
+<div class="modal-foot"><button type="button" class="btn danger" id="deleteClient" hidden>Excluir cliente</button><div><button type="button" class="btn" id="cancelClient">Cancelar</button><button type="submit" class="btn primary" id="saveClient">Salvar cliente</button></div></div>
+</form></dialog>
+<dialog id="printDialog" class="print-dialog" aria-labelledby="printTitle">
+ <div class="modal-head"><div><h2 id="printTitle">Imprimir ordens de serviço</h2><p>Escolha o formato e os pedidos que deseja colocar na folha.</p></div><button type="button" class="close" id="printClose" aria-label="Fechar impressão">×</button></div>
+ <div class="print-content">
+  <div class="print-options" role="group" aria-label="Formato de impressão">
+   <label class="print-option"><input type="radio" name="printMode" value="a4" checked><span><strong>Uma OS · A4 inteiro</strong><small>Uma ordem de serviço ampliada para preencher a folha A4 na vertical (210 × 297 mm).</small></span></label>
+   <label class="print-option"><input type="radio" name="printMode" value="dupla"><span><strong>Duas OS · A4 horizontal</strong><small>Escolha dois pedidos diferentes; cada OS ocupará um espaço A5 (148 × 210 mm).</small></span></label>
+  </div>
+  <div class="print-layout"><div class="print-fields">
+   <div><label for="printOrder1">Primeira ordem de serviço</label><select id="printOrder1" required><option value="">Carregando pedidos...</option></select></div>
+   <div id="printSecondField" hidden><label for="printOrder2">Segunda ordem de serviço</label><select id="printOrder2"><option value="">Selecione o segundo pedido...</option></select></div>
+  </div><div class="print-preview"><div><div class="print-sheet a4" id="printSheet"><span class="print-mini-os"></span></div><div class="print-preview-title" id="printPreviewTitle">Folha A4 · vertical</div></div></div></div>
+  <div class="print-note">O PDF é gerado pelo próprio Python e está pronto para impressão. Na gráfica, selecione <b>Tamanho real / 100%</b> e desative <b>ajustar à página</b>. Na opção dupla, o centro da folha terá uma guia discreta de corte. Observações muito longas continuam em folhas adicionais.</div>
+ </div>
+ <div class="print-foot"><button type="button" class="btn" id="printCancel">Cancelar</button><button type="button" class="btn" id="printDownload">↓ Baixar PDF</button><button type="button" class="btn primary" id="printOpen">↗ Abrir e imprimir</button></div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+
+// Integração segura da interface já existente com sessões no servidor.
+const GC_NATIVE_FETCH=window.fetch.bind(window);
+const GC_AUTH_READY=GC_NATIVE_FETCH('/api/auth/me',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(a=>{
+  if(!a.authenticated){location.replace('/login');throw Error('Sessão expirada')}
+  const user=a.user;
+  const label=document.getElementById('gcUserLabel');if(label)label.textContent=user.name+' · '+(user.role==='admin'?'Administrador':'Funcionário');
+  const admin=document.getElementById('gcAdminLink');if(admin)admin.hidden=user.role!=='admin';
+  if(user.role!=='admin')for(const id of ['backup','restore','csvExport']){const el=document.getElementById(id);if(el)el.hidden=id!=='csvExport'}
+  return a;
+});
+window.fetch=async (url,opts={})=>{
+  const method=String(opts.method||'GET').toUpperCase();
+  if(['POST','PUT','DELETE','PATCH'].includes(method)){
+    const a=await GC_AUTH_READY;
+    const h=new Headers(opts.headers||{});
+    h.set('X-CSRF-Token',a.csrf);
+    opts={...opts,headers:h,credentials:'same-origin'};
+  }
+  const resp=await GC_NATIVE_FETCH(url,opts);
+  if(resp.status===401){location.replace('/login')}
+  return resp;
+};
+async function gcLogout(){try{await fetch('/api/auth/logout',{method:'POST'})}finally{location.replace('/login')}}
+
+const $=id=>document.getElementById(id);
+const DAY=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtDay=s=>{if(!s)return '—';const [y,m,d]=s.split('-');return `${d}/${m}/${y}`};
+let view='hoje', records=[],editingId=null,pending=[], searchTimer=null, reloadIndex=0,clientList=[],clientEditingId=null,clientReturnToOrder=false,clientReloadSeq=0;
+$('day').value=DAY();
+function notify(msg){const t=$('toast');t.textContent=msg;t.classList.add('visible');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('visible'),4600)}
+async function api(path, opts={}){const r=await fetch(path,opts);let data;if(r.status===204)return null;const type=r.headers.get('content-type')||'';data=type.includes('application/json')?await r.json():await r.text();if(!r.ok){let error=(typeof data==='object'&&(data.detail||data.message))||`Erro HTTP ${r.status}`;if(Array.isArray(error))error=error.map(x=>x.msg).join('; ');throw Error(error)}return data}
+const jsonMethod=(method,value)=>({method,headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});
+const titleMap={hoje:['Pendentes do dia','Serviços não concluídos com entrega até a data selecionada.'],todos:['Todos os serviços','Cadastro completo de pedidos, independentemente da data.'],concluidos:['Concluídos','Serviços já finalizados.'],pagos:['Pagos','Pedidos com pagamento integral.'],parciais:['Parcialmente pagos','Pedidos com sinal ou pagamento incompleto.'],naopagos:['Não pagos','Pedidos que ainda não receberam pagamento.']};
+function tag(status,pay=false){const cls=pay?({'Pago':'paid','Parcial':'partial','Não pago':'unpaid','Sem valor':'cancel'}[status]||'cancel'):({'Pendente':'wait','Em produção':'prod','Aguardando cliente':'clientwait','Concluído':'done','Cancelado':'cancel'}[status]||'cancel');return `<span class="pill ${cls}">${esc(status)}</span>`}
+async function refresh(){
+ $('ordersView').hidden=view==='clientes';$('clientsView').hidden=view!=='clientes';
+ $('btnToday').hidden=view==='clientes';$('btnPrint').hidden=view==='clientes';$('newOrder').hidden=view==='clientes';$('newClient').hidden=view!=='clientes';
+ document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+ $('clientCount').textContent=clientList.length;
+ $('viewTitle').textContent=titleMap[view]?.[0]||'Clientes';
+ if(view==='clientes'){++reloadIndex;await refreshClients();return}
+ const seq=++reloadIndex;try{const params=new URLSearchParams({view,day:$('day').value,search:$('search').value});const [list,summary]=await Promise.all([api('/api/orders?'+params),api('/api/summary?day='+encodeURIComponent($('day').value))]);if(seq!==reloadIndex)return;records=list.items;$('statPending').textContent=summary.pending;$('statProducing').textContent=summary.producing;$('statCompleted').textContent=summary.completed;$('statReceivable').textContent=money(summary.receivable);document.querySelectorAll('[data-count]').forEach(n=>n.textContent=summary.counts[n.dataset.count]||0);$('viewTitle').textContent=titleMap[view][0];$('viewSub').textContent=titleMap[view][1];document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('countLabel').textContent=`${records.length} pedido${records.length===1?'':'s'}`;const tbody=$('rows');if(!records.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty"><span class="empty-ico">▢</span><b>Nenhum pedido encontrado</b>Cadastre um novo serviço ou ajuste o filtro e a data.</div></td></tr>';return}
+tbody.innerHTML=records.map(s=>`<tr><td><span class="client">${esc(s.client)}</span><span class="sub">${esc(s.code||s.id.slice(0,8))}${s.attachments_count?` · 📎 ${s.attachments_count} anexo(s)`:''}</span></td><td><div class="service-cell">${esc(s.service)}</div><span class="sub">${s.quantity} un. · ${esc(s.priority)}</span></td><td>${fmtDay(s.due_date)}${s.due_date<DAY()&&s.status!=='Concluído'&&s.status!=='Cancelado'?'<span class="sub" style="color:#cb495d">Atrasado</span>':''}</td><td>${tag(s.status)}</td><td>${tag(s.payment,true)}</td><td class="value">${money(s.total)}</td><td class="value">${money(s.balance)}</td><td><div class="row-actions"><button class="tiny" data-action="edit" data-id="${esc(s.id)}">Editar</button><a class="tiny os" href="/api/orders/${encodeURIComponent(s.id)}/pdf">↓ OS A5</a><button class="tiny os" data-action="print" data-id="${esc(s.id)}">▤ A4 / Dupla</button>${s.status!=='Concluído'&&s.status!=='Cancelado'?`<button class="tiny" data-action="done" data-id="${esc(s.id)}">✓ Concluir</button>`:''}</div></td></tr>`).join('')}
+catch(e){notify('Não foi possível atualizar: '+e.message)}}
+document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{view=btn.dataset.view;refresh()}));
+$('day').addEventListener('change',refresh);
+function shiftDay(inc){const d=new Date($('day').value+'T12:00:00');d.setDate(d.getDate()+inc);$('day').value=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');refresh()}
+$('prevDay').onclick=()=>shiftDay(-1);$('nextDay').onclick=()=>shiftDay(1);$('btnToday').onclick=()=>{$('day').value=DAY();refresh()};
+$('search').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(refresh,240)});
+$('rows').addEventListener('click',async ev=>{const btn=ev.target.closest('button[data-action]');if(!btn)return;const id=btn.dataset.id;if(btn.dataset.action==='edit'){await openModal(id)}else if(btn.dataset.action==='print'){await openPrintDialog(id)}else if(btn.dataset.action==='done'){if(!confirm('Marcar este serviço como concluído?'))return;const s=records.find(x=>x.id===id);if(!s)return;try{await api('/api/orders/'+id,jsonMethod('PUT',formFromOrder(s,'Concluído')));notify('Serviço marcado como concluído.');refresh()}catch(e){notify(e.message)}}});
+// Gerador de OS - PDFs A4 usando apenas o servidor Python offline.
+let printOrders=[];
+function printMode(){return document.querySelector('input[name="printMode"]:checked').value}
+function updatePrintMode(){
+ const dual=printMode()==='dupla';
+ $('printSecondField').hidden=!dual;
+ $('printOrder2').required=dual;
+ $('printSheet').className='print-sheet '+(dual?'dupla':'a4');
+ $('printSheet').innerHTML=dual?'<span class="print-mini-os"></span><span class="print-mini-os"></span>':'<span class="print-mini-os"></span>';
+ $('printPreviewTitle').textContent=dual?'A4 horizontal · 2 × A5':'A4 vertical · 1 OS completa';
+}
+async function openPrintDialog(selectedId=null){
+ try{
+   const response=await api('/api/orders?view=todos');
+   printOrders=response.items;
+   if(!printOrders.length){notify('Cadastre ao menos uma ordem de serviço antes de imprimir.');return}
+   const opts='<option value="">Selecione o pedido...</option>'+printOrders.map(s=>`<option value="${esc(s.id)}">${esc(s.code||s.id.slice(0,8))} · ${esc(s.client)} · ${esc(s.service.slice(0,55))}</option>`).join('');
+   $('printOrder1').innerHTML=opts;
+   $('printOrder2').innerHTML=opts;
+   $('printOrder1').value=selectedId&&printOrders.some(s=>s.id===selectedId)?selectedId:'';
+   $('printOrder2').value='';
+   document.querySelector('input[name="printMode"][value="a4"]').checked=true;
+   updatePrintMode();
+   $('printDialog').showModal();
+ }catch(e){notify('Não foi possível carregar os pedidos: '+e.message)}
+}
+function chosenPrintUrl(inline=false){
+ const first=$('printOrder1').value;
+ const dual=printMode()==='dupla';
+ const second=$('printOrder2').value;
+ if(!first)throw Error('Escolha a primeira ordem de serviço.');
+ if(dual&&!second)throw Error('Escolha a segunda ordem de serviço.');
+ if(dual&&first===second)throw Error('As duas ordens devem ser de pedidos diferentes.');
+ const qs=new URLSearchParams({mode:dual?'dupla':'a4',id1:first});
+ if(dual)qs.set('id2',second);
+ if(inline)qs.set('visualizar','1');
+ return '/api/print/os?'+qs.toString();
+}
+$('btnPrint').addEventListener('click',()=>openPrintDialog());
+$('printClose').onclick=()=>$('printDialog').close();
+$('printCancel').onclick=()=>$('printDialog').close();
+document.querySelectorAll('input[name="printMode"]').forEach(r=>r.addEventListener('change',updatePrintMode));
+$('printDownload').onclick=()=>{try{const url=chosenPrintUrl();const link=document.createElement('a');link.href=url;document.body.appendChild(link);link.click();link.remove()}catch(e){notify(e.message)}};
+$('printOpen').onclick=()=>{try{const url=chosenPrintUrl(true);window.open(url,'_blank','noopener')}catch(e){notify(e.message)}};
+function formFromOrder(s,status){return {code:s.code,client_id:s.client_id,client:s.client,phone:s.phone,service:s.service,quantity:s.quantity,entry_date:s.entry_date,due_date:s.due_date,priority:s.priority,status:status||s.status,total:s.total,received:s.received,notes:s.notes}}
+function resetPending(){pending.forEach(f=>{if(f.url)URL.revokeObjectURL(f.url)});pending=[];renderPending()}
+async function loadClientOptions(preselect=''){
+ const data=await api('/api/clients');clientList=data.items;
+ const opts='<option value="">Selecione um cliente...</option>'+clientList.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}${c.phone?' · '+esc(c.phone):''}</option>`).join('');
+ $('fClient').innerHTML=opts;
+ $('fClient').value=preselect||'';
+ $('clientCount').textContent=clientList.length;
+ setSelectedClient();
+}
+function setSelectedClient(){const c=clientList.find(c=>c.id===$('fClient').value);$('fPhone').value=c?.phone||''}
+$('fClient').addEventListener('change',setSelectedClient);
+async function openModal(id=null){
+ editingId=id;resetPending();$('orderForm').reset();$('deleteOrder').style.display=id?'inline-flex':'none';
+ $('modalTitle').textContent=id?'Editar serviço':'Novo serviço';$('fEntry').value=DAY();$('fDue').value=$('day').value||DAY();
+ $('fTotal').value='0';$('fReceived').value='0';$('savedFiles').innerHTML='';
+ try{
+   let s=null;if(id)s=await api('/api/orders/'+id);
+   await loadClientOptions(s?.client_id||'');
+   if(!id){const preview=await api('/api/next-code');$('fCode').value=preview.next_code;}
+   if(s){Object.entries({fCode:s.code,fService:s.service,fQty:s.quantity,fEntry:s.entry_date,fDue:s.due_date,fPriority:s.priority,fStatus:s.status,fTotal:s.total,fReceived:s.received,fNotes:s.notes}).forEach(([k,v])=>$(k).value=v??'');
+     if(!clientList.find(c=>c.id===s.client_id)){$('fClient').innerHTML+=`<option value="">${esc(s.client)}</option>`}
+     await loadSaved(id);
+   }
+   $('dialog').showModal();
+ }catch(e){notify('Erro ao abrir pedido: '+e.message)}
+}
+$('newOrder').onclick=()=>openModal();$('closeModal').onclick=()=>closeModal();$('cancelModal').onclick=()=>closeModal();
+$('dialog').addEventListener('close',resetPending);
+function closeModal(){$('dialog').close()}
+function fileMb(n){return n>1024*1024?(n/1024/1024).toFixed(1)+' MB':Math.max(1,Math.ceil(n/1024))+' KB'}
+function addFiles(files){let added=0;for(const file of files){if(!file||!file.size)continue;if(file.size>30*1024*1024){notify(`${file.name} ultrapassa o limite de 30 MB.`);continue}if(pending.length>=35){notify('Limite de 35 anexos por envio.');break}pending.push({file,url:file.type.startsWith('image/')&&file.type!=='image/svg+xml'?URL.createObjectURL(file):null});added++}renderPending();if(added)notify(`${added} arquivo(s) pronto(s) para salvar no pedido.`)}
+function renderPending(){$('pendingFiles').innerHTML=pending.map((obj,i)=>`<div class="file-row"><div class="thumb">${obj.url?`<img alt="Prévia" src="${obj.url}">`:'ARQ'}</div><div class="file-desc"><b>${esc(obj.file.name)}</b><small>Para enviar · ${fileMb(obj.file.size)}</small></div><button type="button" class="tiny" data-pending="${i}">Remover</button></div>`).join('')}
+$('pendingFiles').addEventListener('click',ev=>{const btn=ev.target.closest('[data-pending]');if(!btn)return;const i=Number(btn.dataset.pending);const item=pending.splice(i,1)[0];if(item?.url)URL.revokeObjectURL(item.url);renderPending()});
+async function loadSaved(orderId){const arr=await api(`/api/orders/${orderId}/attachments`);$('savedFiles').innerHTML=arr.length?'<div style="font-size:11px;color:#7e8ba1;font-weight:800;margin-top:8px">ANEXOS SALVOS</div>':'';$('savedFiles').innerHTML+=arr.map(a=>`<div class="file-row"><div class="thumb">${['image/jpeg','image/png','image/webp','image/gif','image/bmp'].includes(a.content_type)?`<img alt="Imagem anexada" src="/api/attachments/${a.id}/preview">`:'ARQ'}</div><div class="file-desc"><b>${esc(a.filename)}</b><small>Salvo · ${fileMb(a.size)}</small></div><a class="tiny" href="/api/attachments/${a.id}/download">Baixar</a><button type="button" class="tiny" data-remove="${a.id}">Excluir</button></div>`).join('')}
+$('savedFiles').addEventListener('click',async ev=>{const btn=ev.target.closest('button[data-remove]');if(!btn)return;if(!confirm('Excluir este anexo do pedido?'))return;try{await api('/api/attachments/'+btn.dataset.remove,{method:'DELETE'});await loadSaved(editingId);refresh()}catch(e){notify(e.message)}});
+$('chooseFiles').onclick=()=>$('fileInput').click();$('fileInput').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+for(const eventType of ['dragover','dragenter'])$('drop').addEventListener(eventType,e=>{e.preventDefault();$('drop').classList.add('dragover')});
+for(const eventType of ['dragleave','drop'])$('drop').addEventListener(eventType,e=>{e.preventDefault();$('drop').classList.remove('dragover')});
+$('drop').addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+document.addEventListener('paste',e=>{const list=[...(e.clipboardData?.items||[])].filter(i=>i.kind==='file'&&i.type.startsWith('image/'));if(!list.length)return;const files=list.map((item,i)=>{const file=item.getAsFile();if(!file)return null;const ext=file.type.split('/')[1]?.replace('jpeg','jpg')||'png';return new File([file],file.name&&file.name!=='image.png'?file.name:`imagem_colada_${Date.now()}_${i+1}.${ext}`,{type:file.type})}).filter(Boolean);if(!files.length)return;e.preventDefault();if($('dialog').open)addFiles(files);else openModal().then(()=>addFiles(files))});
+$('orderForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('saveOrder');btn.disabled=true;btn.textContent='Salvando...';const selected=clientList.find(c=>c.id===$('fClient').value);if(!selected){notify('Cadastre ou selecione um cliente.');btn.disabled=false;btn.textContent='Salvar serviço';return}const payload={client_id:selected.id,client:selected.name,phone:selected.phone,service:$('fService').value,quantity:Number($('fQty').value),entry_date:$('fEntry').value,due_date:$('fDue').value,priority:$('fPriority').value,status:$('fStatus').value,total:Number($('fTotal').value),received:Number($('fReceived').value),notes:$('fNotes').value};try{if(payload.received>payload.total)throw Error('O valor recebido não pode ser maior que o valor total.');const saved=await api(editingId?'/api/orders/'+editingId:'/api/orders',jsonMethod(editingId?'PUT':'POST',payload));editingId=saved.id;if(pending.length){const fd=new FormData();for(const obj of pending)fd.append('files',obj.file,obj.file.name);await api(`/api/orders/${saved.id}/attachments`,{method:'POST',body:fd})}closeModal();notify('Pedido salvo com sucesso.');refresh()}catch(err){notify('Erro ao salvar: '+err.message)}finally{btn.disabled=false;btn.textContent='Salvar serviço'}});
+$('deleteOrder').onclick=async()=>{if(!editingId||!confirm('Excluir este pedido e todos os seus anexos permanentemente?'))return;try{await api('/api/orders/'+editingId,{method:'DELETE'});closeModal();notify('Pedido excluído.');refresh()}catch(e){notify(e.message)}};
+$('backup').onclick=()=>{window.location.href='/api/backup'};
+$('restore').onclick=()=>$('backupFile').click();
+$('backupFile').addEventListener('change',async ev=>{const file=ev.target.files?.[0];if(!file)return;ev.target.value='';if(!confirm('Restaurar backup? TODOS os pedidos e anexos existentes serão substituídos. Faça um backup atual antes de continuar.'))return;try{const fd=new FormData();fd.append('file',file,file.name);const out=await api('/api/restore',{method:'POST',body:fd});notify(`Backup restaurado: ${out.orders} pedidos e ${out.attachments} anexos.`);refresh()}catch(e){notify('Falha ao restaurar: '+e.message)}});
+$('csvExport').onclick=async()=>{try{const all=(await api('/api/orders?view=todos&day='+$('day').value)).items;const keys=['code','client','phone','service','quantity','entry_date','due_date','priority','status','total','received','balance','payment','notes'];const headers=['Código','Cliente','Telefone','Serviço','Quantidade','Pedido','Entrega','Prioridade','Produção','Total','Recebido','Saldo','Pagamento','Observações'];const csv=[headers,...all.map(s=>keys.map(k=>s[k]??''))].map(row=>row.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`servicos_grafica_carvalho_${DAY()}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){notify(e.message)}};
+
+// Clientes: cadastro, pesquisa, seleção em pedidos e edição.
+async function refreshClients(){
+ const seq=++clientReloadSeq;
+ try{
+   const r=await api('/api/clients?search='+encodeURIComponent($('clientSearch').value));
+   if(seq!==clientReloadSeq)return;
+   const list=r.items;
+   // Contagem total independente da busca.
+   const total=await api('/api/clients');clientList=total.items;
+   $('clientCount').textContent=clientList.length;
+   $('clientsTotal').textContent=`${list.length} cliente${list.length!==1?'s':''} exibidos de ${clientList.length} cadastrados`;
+   $('clientRows').innerHTML=list.length?list.map(c=>`<tr>
+    <td><span class="client-main">${esc(c.name)}</span><small class="small-info">${esc(c.email||c.address||'Cadastro ativo')}</small></td>
+    <td>${esc(c.phone||'—')}</td><td>${esc(c.document||'—')}</td>
+    <td>${c.orders_count} pedido${c.orders_count===1?'':'s'}</td>
+    <td><button type="button" class="tiny" data-client-edit="${esc(c.id)}">Editar cliente</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty"><span class="empty-ico">♙</span><b>Nenhum cliente encontrado</b>Cadastre um cliente para começar.</div></td></tr>';
+ }catch(err){notify('Erro ao carregar clientes: '+err.message)}
+}
+async function openClientModal(id=null,fromOrder=false){
+ clientEditingId=id;clientReturnToOrder=fromOrder;
+ $('clientForm').reset();$('clientDialogTitle').textContent=id?'Editar cliente':'Cadastrar cliente';
+ $('deleteClient').hidden=!id;
+ if(id){try{const c=await api('/api/clients/'+id);Object.entries({cName:c.name,cPhone:c.phone,cDocument:c.document,cEmail:c.email,cAddress:c.address,cNotes:c.notes}).forEach(([k,v])=>$(k).value=v||'')}catch(e){notify(e.message);return}}
+ $('clientDialog').showModal();
+}
+function closeClientModal(){$('clientDialog').close()}
+$('newClient').onclick=() =>openClientModal();
+$('addClientPanel').onclick=() =>openClientModal();
+$('addClientFromOrder').onclick=()=>openClientModal(null,true);
+$('closeClientDialog').onclick=closeClientModal;
+$('cancelClient').onclick=closeClientModal;
+$('clientRows').addEventListener('click',ev=>{const b=ev.target.closest('[data-client-edit]');if(b)openClientModal(b.dataset.clientEdit)});
+let clientSearchTimer=null;$('clientSearch').addEventListener('input',()=>{clearTimeout(clientSearchTimer);clientSearchTimer=setTimeout(refreshClients,230)});
+$('clientForm').addEventListener('submit',async e=>{
+ e.preventDefault();const btn=$('saveClient');btn.disabled=true;
+ const data={name:$('cName').value,phone:$('cPhone').value,document:$('cDocument').value,email:$('cEmail').value,address:$('cAddress').value,notes:$('cNotes').value};
+ try{
+  const saved=await api(clientEditingId?'/api/clients/'+clientEditingId:'/api/clients',jsonMethod(clientEditingId?'PUT':'POST',data));
+  closeClientModal();notify('Cliente salvo com sucesso.');
+  if(clientReturnToOrder){await loadClientOptions(saved.id)}
+  else if(view==='clientes')await refreshClients();
+  else await loadClientOptions($('fClient').value);
+ }catch(err){notify('Erro ao salvar cliente: '+err.message)}finally{btn.disabled=false}
+});
+$('deleteClient').onclick=async()=>{
+ if(!clientEditingId||!confirm('Excluir este cliente? Clientes associados a pedidos não podem ser excluídos.'))return;
+ try{await api('/api/clients/'+clientEditingId,{method:'DELETE'});closeClientModal();notify('Cliente excluído.');await refreshClients()}
+ catch(err){notify('Não foi possível excluir: '+err.message)}
+};
+
+refresh();
+</script>
+</body>
+</html>
