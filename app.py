@@ -828,7 +828,7 @@ class Handler(BaseHTTPRequestHandler):
             id2=param('id2')
             if not re.fullmatch(r'[a-fA-F0-9]{32}',id1):
                 raise AppError(422,'Selecione a primeira ordem de serviço.')
-            if mode not in ('a4','dupla'):
+            if mode not in ('a4','a5','dupla'):
                 raise AppError(422,'Escolha uma modalidade de impressão válida.')
             if mode=='dupla':
                 if not re.fullmatch(r'[a-fA-F0-9]{32}',id2):
@@ -841,9 +841,9 @@ class Handler(BaseHTTPRequestHandler):
                 pdf=make_pdf_double(first,second)
                 filename='OS_DUAS_A5_EM_A4_HORIZONTAL.pdf'
             else:
-                pdf=make_pdf(first,'a4')
+                pdf=make_pdf(first,mode)
                 code=re.sub('[^A-Za-z0-9_-]','_',first['code'] or id1[:10])[:45]
-                filename=f'OS_{code}_A4.pdf'
+                filename=f'OS_{code}_{mode.upper()}.pdf'
             disp='inline' if param('visualizar')=='1' else 'attachment'
             return self.reply(200,pdf,'application/pdf',{
                 'Content-Disposition':f'{disp}; filename="{filename}"'})
