@@ -39,5 +39,5 @@ assert.throws(()=>context.collectOrderServices(),/Preencha a descrição/);
 inputs=Array.from({length:9},(_,i)=>({value:'Serviço '+i}));
 assert.throws(()=>context.collectOrderServices(),/até 8/);
 inputs=[{value:'a'.repeat(301)}];
-assert.throws(()=>context.collectOrderServices(),/máximo de 300/);
+assert.throws(()=>context.collectOrderServices(),/máximo 300/);
 console.log('OK: JS válido, pedidos antigos, vários serviços e validações.');
