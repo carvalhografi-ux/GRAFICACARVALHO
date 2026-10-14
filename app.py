@@ -1,8 +1,8 @@
-"""Gráfica Carvalho — servidor web Python para Render e Wix com autenticação e SQLite persistente."""
+"""Gráfica Carvalho — API Python no Render Free com dados persistidos em PostgreSQL Neon."""
 from __future__ import annotations
 import base64
 import security
-from contextlib import contextmanager
+import print_queue
 from datetime import date, datetime
 from email.parser import BytesParser
 from email import policy
@@ -12,7 +12,7 @@ import json
 import os
 from pathlib import Path
 import re
-import sqlite3
+import database
 import struct
 from threading import Timer
 from urllib.parse import parse_qs, quote, unquote, urlparse
@@ -23,13 +23,12 @@ import textwrap
 
 ROOT = Path(__file__).resolve().parent
 STATIC = ROOT / 'static'
-DATA = Path(os.environ.get('GRAFICA_DATA_DIR',str(ROOT/'data')))
-DATA.mkdir(parents=True,exist_ok=True)
-DB = DATA/'grafica_carvalho.db'
 LOGO = STATIC/'logo_carvalho.png'
 STATUS = {'Pendente','Em produção','Aguardando cliente','Concluído','Cancelado'}
 PRIORITIES = {'Normal','Alta','Urgente'}
 MAX_FILE = 30*1024*1024
+# Proteção de memória para o servidor Render Free (envios de até 40 MB em arquivos).
+MAX_UPLOAD_BODY = 42*1024*1024
 
 class AppError(Exception):
     def __init__(self, status:int, message:str):
@@ -37,20 +36,7 @@ class AppError(Exception):
         self.status=status
         self.detail=message
 
-@contextmanager
-def connect():
-    db=sqlite3.connect(DB,timeout=20)
-    db.row_factory=sqlite3.Row
-    db.execute('PRAGMA foreign_keys = ON')
-    db.execute('PRAGMA busy_timeout = 20000')
-    try:
-        yield db
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
+connect = database.connect
 
 def init_db():
     with connect() as db:
@@ -58,13 +44,13 @@ def init_db():
             id TEXT PRIMARY KEY, code TEXT NOT NULL DEFAULT '', client TEXT NOT NULL,
             phone TEXT NOT NULL DEFAULT '', service TEXT NOT NULL, quantity INTEGER NOT NULL DEFAULT 1,
             entry_date TEXT NOT NULL, due_date TEXT NOT NULL, priority TEXT NOT NULL DEFAULT 'Normal',
-            status TEXT NOT NULL DEFAULT 'Pendente', total REAL NOT NULL DEFAULT 0,
-            received REAL NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'Pendente', total DOUBLE PRECISION NOT NULL DEFAULT 0,
+            received DOUBLE PRECISION NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''')
         db.execute('''CREATE TABLE IF NOT EXISTS attachments (
             id TEXT PRIMARY KEY, order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
             filename TEXT NOT NULL, content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
-            size INTEGER NOT NULL, data BLOB NOT NULL, created_at TEXT NOT NULL)''')
+            size INTEGER NOT NULL, data BYTEA NOT NULL, created_at TEXT NOT NULL)''')
         db.execute('CREATE INDEX IF NOT EXISTS ix_orders_due ON orders(due_date,status)')
         db.execute('CREATE INDEX IF NOT EXISTS ix_attachments_order ON attachments(order_id)')
         db.execute('''CREATE TABLE IF NOT EXISTS clients (
@@ -72,17 +58,17 @@ def init_db():
           email TEXT NOT NULL DEFAULT '', document TEXT NOT NULL DEFAULT '',
           address TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '',
           created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''')
-        db.execute('CREATE INDEX IF NOT EXISTS ix_clients_name ON clients(name COLLATE NOCASE)')
-        if 'client_id' not in [c['name'] for c in db.execute('PRAGMA table_info(orders)')]:
-            db.execute('ALTER TABLE orders ADD COLUMN client_id TEXT')
+        db.execute('CREATE INDEX IF NOT EXISTS ix_clients_name ON clients(LOWER(name))')
+        db.execute('ALTER TABLE orders ADD COLUMN IF NOT EXISTS client_id TEXT')
         db.execute('''CREATE TABLE IF NOT EXISTS order_counter (
           id INTEGER PRIMARY KEY CHECK (id = 1), last_num INTEGER NOT NULL DEFAULT 0)''')
-        db.execute('INSERT OR IGNORE INTO order_counter(id,last_num) VALUES (1,0)')
+        db.execute('INSERT INTO order_counter(id,last_num) VALUES (1,0) ON CONFLICT (id) DO NOTHING')
         # Migração sem apagar pedidos: preserva códigos antigos únicos.
         # Códigos antigos vazios ou repetidos recebem um novo número GC.
         normalize_existing_codes(db)
         migrate_order_clients(db)
-        db.execute('CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_code ON orders(code COLLATE NOCASE)')
+        db.execute('CREATE UNIQUE INDEX IF NOT EXISTS ux_orders_code ON orders(LOWER(code))')
+    print_queue.setup()
 
 CODE_RE=re.compile(r'^GC-(\d+)$',re.IGNORECASE)
 
@@ -97,11 +83,11 @@ def highwater(db):
 
 def next_code(db):
     # Deve ser chamado apenas dentro de uma transação de escrita.
-    num=int(db.execute('SELECT last_num FROM order_counter WHERE id=1').fetchone()[0])
+    num=int(db.execute('SELECT last_num FROM order_counter WHERE id=1 FOR UPDATE').fetchone()[0])
     while True:
         num+=1
         code=f'GC-{num:06d}'
-        if not db.execute('SELECT 1 FROM orders WHERE code=? COLLATE NOCASE',(code,)).fetchone():break
+        if not db.execute('SELECT 1 FROM orders WHERE LOWER(code)=LOWER(?)',(code,)).fetchone():break
     db.execute('UPDATE order_counter SET last_num=? WHERE id=1',(num,))
     return code
 
@@ -109,7 +95,7 @@ def normalize_existing_codes(db):
     maxnum=highwater(db)
     db.execute('UPDATE order_counter SET last_num=? WHERE id=1',(maxnum,))
     seen=set()
-    for row in db.execute('SELECT id,code FROM orders ORDER BY created_at ASC,rowid ASC').fetchall():
+    for row in db.execute('SELECT id,code FROM orders ORDER BY created_at ASC,id ASC').fetchall():
         code=(row['code'] or '').strip()
         if not code or code.casefold() in seen:
             code=next_code(db)
@@ -122,7 +108,7 @@ def migrate_order_clients(db):
     # Importa nomes antigos para o cadastro sem alterar pedidos.
     for o in db.execute('SELECT id,client,phone,client_id FROM orders ORDER BY created_at').fetchall():
         if o['client_id'] and db.execute('SELECT 1 FROM clients WHERE id=?',(o['client_id'],)).fetchone():continue
-        found=db.execute('SELECT id FROM clients WHERE name=? COLLATE NOCASE AND phone=? LIMIT 1',(o['client'],o['phone'])).fetchone()
+        found=db.execute('SELECT id FROM clients WHERE LOWER(name)=LOWER(?) AND phone=? LIMIT 1',(o['client'],o['phone'])).fetchone()
         if found:cid=found['id']
         else:
             cid=uuid.uuid4().hex;stamp=now()
@@ -147,7 +133,7 @@ def client_detail(db,cid):
 def list_clients(search=''):
     with connect() as db:
         rows=[dict(x) for x in db.execute('''SELECT c.*,(SELECT COUNT(*) FROM orders o WHERE o.client_id=c.id) AS orders_count
-         FROM clients c ORDER BY name COLLATE NOCASE''')]
+         FROM clients c ORDER BY LOWER(name)''')]
     if search.strip():
         term=search.strip().casefold()
         rows=[r for r in rows if term in ' '.join(str(r[k]) for k in ('name','phone','email','document','address')).casefold()]
@@ -183,7 +169,7 @@ def attach_order_client(db, data, payload):
         data['phone']=c['phone']
     else:
         # Compatível com integrações e backups anteriores.
-        row=db.execute('SELECT id FROM clients WHERE name=? COLLATE NOCASE AND phone=? LIMIT 1',(data['client'],data['phone'])).fetchone()
+        row=db.execute('SELECT id FROM clients WHERE LOWER(name)=LOWER(?) AND phone=? LIMIT 1',(data['client'],data['phone'])).fetchone()
         if row:cid=row['id']
         else:
             cid=uuid.uuid4().hex;t=now()
@@ -220,7 +206,7 @@ def validated(payload):
             'code':get_text('code',28),
             'client':get_text('client',100,True),
             'phone':get_text('phone',50),
-            'service':get_text('service',300,True),
+            'service':get_text('service',3000,True),
             'quantity':int(payload.get('quantity',1)),
             'entry_date':validate_day(payload.get('entry_date')),
             'due_date':validate_day(payload.get('due_date')),
@@ -275,7 +261,7 @@ def summary(day=None):
 def create_order(payload):
     data=validated(payload);oid=uuid.uuid4().hex;t=now()
     with connect() as db:
-        db.execute('BEGIN IMMEDIATE')
+        db.execute('SELECT last_num FROM order_counter WHERE id=1 FOR UPDATE')
         data=attach_order_client(db,data,payload)
         data['code']=next_code(db)  # emitido na gravação, nunca confiamos no código enviado pelo navegador
         db.execute('''INSERT INTO orders (id,code,client,client_id,phone,service,quantity,entry_date,due_date,
@@ -375,7 +361,15 @@ def restore(raw):
     except (ValueError,KeyError,TypeError,AppError) as err:
         raise AppError(422,'Backup inválido: '+str(err))
     with connect() as db:
-        db.execute('BEGIN IMMEDIATE')
+        # Os usuários não são apagados pelo backup. Recuse a restauração quando
+        # ela deixaria contas do portal apontando para clientes inexistentes.
+        linked={r['client_id'] for r in db.execute(
+            "SELECT DISTINCT client_id FROM app_users WHERE role='client' AND client_id IS NOT NULL")}
+        restored={c['id'] for c in parsed_clients}
+        if not linked.issubset(restored):
+            raise AppError(409, 'Este backup não contém todos os clientes associados a contas do portal. '
+                              'Preserve os cadastros vinculados ou desative a vinculação antes de restaurar.')
+        db.execute('SELECT last_num FROM order_counter WHERE id=1 FOR UPDATE')
         previous_high=max(highwater(db),backed_up_last_num)
         # Resolva conflitos ANTES do INSERT (o índice UNIQUE já existe no banco).
         max_num=previous_high
@@ -475,7 +469,7 @@ class PDF:
         self.objects.append(blob);return len(self.objects)-1
     def stream(self,dic,blob):
         return self.add(('<< '+dic+' /Length '+str(len(blob))+' >>\nstream\n').encode()+blob+b'\nendstream')
-    def build(self,page_commands,img=None,page_w=PW,page_h=PH):
+    def build(self,page_commands,img=None,page_w=PW,page_h=PH,extra_images=()):
         catalog=self.add(b'')
         pages=self.add(b'')
         font=self.add(b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>')
@@ -488,12 +482,18 @@ class PDF:
                 aid=self.stream(f'/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode',zlib.compress(alpha,7))
                 smask=f' /SMask {aid} 0 R'
             iid=self.stream(f'/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode{smask}',zlib.compress(rgb,7))
-            image_entry=f' /XObject << /Logo {iid} 0 R >>'
+            image_entry=f' /Logo {iid} 0 R'
+        for i,photo in enumerate(extra_images):
+            width,height=photo['width'],photo['height']
+            col='/DeviceGray' if photo['gray'] else '/DeviceRGB'
+            iid=self.stream(f'/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace {col} /BitsPerComponent 8 /Filter /DCTDecode',photo['data'])
+            image_entry+=f' /Foto{i} {iid} 0 R'
+        xobjects=f' /XObject <<{image_entry} >>' if image_entry else ''
         kids=[]
         for commands in page_commands:
             blob='\n'.join(commands).encode('latin1')
             content_id=self.stream('/Filter /FlateDecode',zlib.compress(blob,7))
-            page_id=self.add(f'<< /Type /Page /Parent {pages} 0 R /MediaBox [0 0 {page_w:.4f} {page_h:.4f}] /Resources << /Font << /F1 {font} 0 R /F2 {fontb} 0 R >>{image_entry} >> /Contents {content_id} 0 R >>'.encode())
+            page_id=self.add(f'<< /Type /Page /Parent {pages} 0 R /MediaBox [0 0 {page_w:.4f} {page_h:.4f}] /Resources << /Font << /F1 {font} 0 R /F2 {fontb} 0 R >>{xobjects} >> /Contents {content_id} 0 R >>'.encode())
             kids.append(page_id)
         self.objects[pages]=f'<< /Type /Pages /Kids [{" ".join(str(x)+" 0 R" for x in kids)}] /Count {len(kids)} >>'.encode()
         self.objects[catalog]=f'<< /Type /Catalog /Pages {pages} 0 R >>'.encode()
@@ -506,10 +506,70 @@ class PDF:
         out.extend(f'trailer\n<< /Size {len(offsets)} /Root {catalog} 0 R >>\nstartxref\n{xref}\n%%EOF\n'.encode())
         return bytes(out)
 
-def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
+
+# Formatos raster suportados para miniaturas dos anexos nas folhas adicionais.
+# Os originais permanecem intactos no banco e nos downloads do pedido.
+PHOTO_MIMES = ('image/jpeg','image/png','image/webp','image/gif','image/bmp')
+PHOTO_LIMIT_PER_OS = 12
+
+def load_os_photos(oid, color='color'):
+    """Carrega até 12 fotos por OS, sem trazer arquivos CDR/PDF nem os originais enormes.
+    Cada foto gera um JPEG redimensionado, com metadados EXIF removidos."""
+    from PIL import Image, ImageOps, UnidentifiedImageError
+    Image.MAX_IMAGE_PIXELS = 36_000_000
+    photos=[]
+    with connect() as db:
+        rows=db.execute("""SELECT id,filename,size FROM attachments
+            WHERE order_id=? AND LOWER(content_type) IN (?,?,?,?,?)
+            ORDER BY created_at,id LIMIT ?""",
+            (oid,*PHOTO_MIMES,PHOTO_LIMIT_PER_OS)).fetchall()
+        for row in rows:
+            if row['size']>20*1024*1024:continue
+            stored=db.execute('SELECT data FROM attachments WHERE id=?',(row['id'],)).fetchone()
+            if not stored:continue
+            try:
+                with Image.open(io.BytesIO(bytes(stored['data']))) as original:
+                    if original.width*original.height>36_000_000:
+                        continue
+                    original.seek(0)  # GIF animado: apenas primeiro quadro.
+                    pic=ImageOps.exif_transpose(original)
+                    pic.thumbnail((1400,1400),Image.Resampling.LANCZOS)
+                    if 'A' in pic.getbands() or ('transparency' in pic.info):
+                        rgba=pic.convert('RGBA')
+                        back=Image.new('RGB',rgba.size,'white')
+                        back.paste(rgba,mask=rgba.getchannel('A'))
+                        pic=back
+                    pic=pic.convert('L' if color=='bw' else 'RGB')
+                    out=io.BytesIO()
+                    pic.save(out,format='JPEG',quality=78,optimize=True)
+                    photos.append({'name':str(row['filename'])[:120],
+                        'width':pic.width,'height':pic.height,
+                        'gray':color=='bw','data':out.getvalue()})
+                    break  # A OS exibe somente a primeira imagem válida.
+            except (OSError,ValueError,UnidentifiedImageError,Image.DecompressionBombError):
+                continue
+    return photos
+
+def service_lines_for_os(value,width_pt,size):
+    """Formata descrições em itens numerados mantendo cada item visível na OS.
+    Descrições muito extensas são abreviadas para caber numa única folha."""
+    chunks=[x.strip() for x in str(value or '').splitlines() if x.strip()]
+    numbered=len(chunks)>1 and all(re.match(r'^\d+[.)]\s+\S',x) for x in chunks)
+    if not numbered:
+        return pdf_wrap(value,width_pt,size),False
+    max_chars=max(15,int(width_pt/(size*.52)))
+    shortened=[x if len(x)<=max_chars else x[:max_chars-3].rstrip()+'...' for x in chunks]
+    return shortened,True
+
+def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos=(), photo_offset=0):
     INK='#2c316f';MUT='#6b7393';FRAME='#e0e4f0';PURP='#34378e';WHITE='#ffffff'
     def rgb(h):
-        h=h.lstrip('#');return ' '.join(f'{int(h[i:i+2],16)/255:.3f}' for i in (0,2,4))
+        h=h.lstrip('#')
+        channels=[int(h[i:i+2],16) for i in (0,2,4)]
+        if color=='bw':
+            g=round(.299*channels[0]+.587*channels[1]+.114*channels[2])
+            channels=[g,g,g]
+        return ' '.join(f'{v/255:.3f}' for v in channels)
     def rect(cmd,x,y,w,h,fill=WHITE,stroke=None):
         xx=x*MM; yy=PH-(y+h)*MM
         if fill:cmd.append(f'{rgb(fill)} rg {xx:.2f} {yy:.2f} {w*MM:.2f} {h*MM:.2f} re f')
@@ -531,6 +591,13 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
     def panel(c,y,h):rect(c,10,y,128,h,WHITE,FRAME)
     try:png_logo=png_to_rgb_alpha(LOGO.read_bytes()) if LOGO.exists() else None
     except (ValueError,zlib.error,struct.error):png_logo=None
+    if color=='bw' and png_logo is not None:
+        iw,ih,rgbbytes,alpha=png_logo
+        gray=bytearray(len(rgbbytes))
+        for k in range(0,len(rgbbytes),3):
+            v=round(.299*rgbbytes[k]+.587*rgbbytes[k+1]+.114*rgbbytes[k+2])
+            gray[k:k+3]=bytes((v,v,v))
+        png_logo=(iw,ih,bytes(gray),alpha)
     c=[]; header(c,'ORDEM DE SERVIÇO')
     panel(c,45,17)
     label(c,'Nº DA OS',14,51);text(c,order['code'] or order['id'][:9].upper(),14,58,9,INK,True)
@@ -541,23 +608,59 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
     name_lines=pdf_wrap(order['client'],120*MM,11)
     text(c,name_lines[0],14,78,10.5,INK,True)
     label(c,'TELEFONE / WHATSAPP',14,84);text(c,order['phone'] or 'Não informado',53,84,8)
-    panel(c,91,33)
-    label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
-    service_lines=pdf_wrap(order['service'],119*MM,9.3)
-    for i,line in enumerate(service_lines[:3]):text(c,line,14,104+i*5,9.3)
-    rect(c,14,115.5,120,.3,FRAME)
-    label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
-    label(c,'PRIORIDADE',45,119.5);text(c,order['priority'],69,119.5,7.8,INK,True)
-    label(c,'SITUAÇÃO',101,118);text(c,order['status'],101,122,6.8,INK,True)
-    panel(c,127,32)
-    label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
-    notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
-    for i,line in enumerate(notes[:4]):text(c,line,14,141+i*4.3,8.4)
-    extra=[]
-    if len(name_lines)>1:extra.append('CLIENTE: '+order['client'])
-    if len(service_lines)>3:extra.append('SERVIÇO: '+order['service'])
-    if len(notes)>4:extra+=['OBSERVAÇÕES (continuação):']+notes[4:]
-    if extra:text(c,'Mais detalhes na próxima página.',14,156.5,6.2,MUT)
+    photo=photos[0] if photos else None
+    if photo:
+        rect(c,10,91,76,68,WHITE,FRAME)
+        rect(c,89,91,49,68,WHITE,FRAME)
+        label(c,'SERVIÇOS DO PEDIDO' if '\n' in str(order['service']) else 'DESCRIÇÃO DO SERVIÇO',14,98)
+        service_lines,multiple_services=service_lines_for_os(order['service'],68*MM,8.2)
+        for i,part in enumerate(service_lines[:8 if multiple_services else 5]):
+            text(c,part,14,104+i*(3.2 if multiple_services else 4.35),7.55 if multiple_services else 8.0)
+        rect(c,14,127,68,.3,FRAME)
+        label(c,'QTD.',14,132);text(c,order['quantity'],14,138,7.3,INK,True)
+        label(c,'PRIORIDADE',34,132);text(c,order['priority'][:13],34,138,7,INK,True)
+        label(c,'SITUAÇÃO',61,132);text(c,order['status'][:12],61,138,6.2,INK,True)
+        rect(c,14,140,68,.3,FRAME)
+        notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',68*MM,7.8)
+        label(c,'OBSERVAÇÕES' if len(notes)<=2 else 'OBSERVAÇÕES (RESUMO)',14,145)
+        for i,part in enumerate(notes[:2]):text(c,part,14,151+i*4,7.6)
+        label(c,'IMAGEM DO PEDIDO',93,98)
+        rect(c,93,101,41,46,'#f8f9fc',FRAME)
+        factor=min(41*MM/photo['width'],46*MM/photo['height'])
+        w,h=photo['width']*factor,photo['height']*factor
+        x=93*MM+(41*MM-w)/2
+        y=PH-101*MM-(46*MM-h)/2-h
+        c.append(f'q {w:.2f} 0 0 {h:.2f} {x:.2f} {y:.2f} cm /Foto{photo_offset} Do Q')
+        for i,part in enumerate(pdf_wrap(photo['name'],41*MM,6.3)[:2]):
+            text(c,part,93,152+i*3.2,6.2,MUT)
+    else:
+        service_lines,multiple_services=service_lines_for_os(order['service'],119*MM,9.3)
+        if multiple_services:
+            panel(c,91,68)
+            label(c,'SERVIÇOS DO PEDIDO',14,98)
+            for i,part in enumerate(service_lines[:8]):text(c,part,14,104+i*3.2,8.1)
+            rect(c,14,131,120,.3,FRAME)
+            label(c,'QTD.',14,136);text(c,order['quantity'],27,136,7.6,INK,True)
+            label(c,'PRIORIDADE',45,136);text(c,order['priority'][:16],69,136,7.6,INK,True)
+            label(c,'SITUAÇÃO',101,136);text(c,order['status'][:15],101,140,6.8,INK,True)
+            rect(c,14,142,120,.3,FRAME)
+            label(c,'OBSERVAÇÕES / ACABAMENTO',14,147)
+            notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8)
+            for i,part in enumerate(notes[:2]):text(c,part,14,152+i*4.0,7.7)
+        else:
+            panel(c,91,33)
+            label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
+            for i,part in enumerate(service_lines[:3]):text(c,part,14,104+i*5,9.3)
+            rect(c,14,115.5,120,.3,FRAME)
+            label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
+            label(c,'PRIORIDADE',45,119.5);text(c,order['priority'][:16],69,119.5,7.8,INK,True)
+            label(c,'SITUAÇÃO',101,118);text(c,order['status'][:15],101,122,6.8,INK,True)
+            panel(c,127,32)
+            label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
+            notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
+            for i,part in enumerate(notes[:4]):text(c,part,14,141+i*4.3,8.4)
+    if len(name_lines)>1 or len(service_lines)>(8 if multiple_services else (5 if photo else 3)) or len(notes)>(2 if (photo or multiple_services) else 4):
+        text(c,'Informações extensas: consulte o pedido completo no sistema.',14,160.4,5.2,MUT)
     panel(c,162,18)
     label(c,'VALOR TOTAL',14,168);text(c,brl(order['total']),14,176,9.2,INK,True)
     label(c,'RECEBIDO',57,168);text(c,brl(order['received']),57,176,9,INK,True)
@@ -567,30 +670,25 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)"):
     label(c,'RESPONSÁVEL / PRODUÇÃO',13,195);label(c,'ASSINATURA DO CLIENTE',85,195)
     text(c,'Gráfica Carvalho  •  Folha '+footer_label,11,205,6.1,MUT)
     pages=[c]
-    if extra:
-        lines=[]
-        for paragraph in extra:lines.extend(pdf_wrap(paragraph,118*MM,9))
-        for i in range(0,len(lines),27):
-            c=[];header(c,'COMPLEMENTO DA ORDEM DE SERVIÇO');panel(c,46,155)
-            label(c,'PEDIDO: '+(order['code'] or order['id'][:8]),14,53)
-            for j,s in enumerate(lines[i:i+27]):text(c,s,14,61+j*4.6,8.7)
-            pages.append(c)
     return pages,png_logo
 
-def make_pdf(order, mode='a5'):
+def make_pdf(order, mode='a5', color='color'):
     """Uma OS em A5 real ou uma OS ampliada para a folha A4 retrato."""
-    pages,logo=make_os_pages(order, 'A4 (210 x 297 mm)' if mode=='a4' else 'A5 (148 x 210 mm)')
+    if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
+    photos=load_os_photos(order['id'],color)[:1]
+    pages,logo=make_os_pages(order, 'A4 (210 x 297 mm)' if mode=='a4' else 'A5 (148 x 210 mm)',
+                             color=color,photos=photos)
     if mode=='a5':
-        return PDF().build(pages,logo)
+        return PDF().build(pages,logo,extra_images=photos)
     if mode=='a4':
         # O A4 tem a mesma proporção ISO da A5, escalado 141,4%.
         scale=A4_H/PH
         shift=(A4_W-PW*scale)/2
         bigger=[[f'q {scale:.8f} 0 0 {scale:.8f} {shift:.4f} 0 cm',*c,'Q'] for c in pages]
-        return PDF().build(bigger,logo,page_w=A4_W,page_h=A4_H)
+        return PDF().build(bigger,logo,page_w=A4_W,page_h=A4_H,extra_images=photos)
     raise AppError(422,'Formato de impressão inválido.')
 
-def make_pdf_double(first,second):
+def make_pdf_double(first,second,color='color'):
     """Duas OS distintas, 148 x 210 mm cada, lado a lado em A4 horizontal.
 
     O A4 mede 297 x 210 mm, deixando 0,5 mm de espaço central total
@@ -599,8 +697,11 @@ def make_pdf_double(first,second):
     """
     if first['id']==second['id']:
         raise AppError(422,'Escolha duas ordens de serviço diferentes.')
-    left,logo=make_os_pages(first)
-    right,_=make_os_pages(second)
+    if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
+    images_left=load_os_photos(first['id'],color)[:1]
+    images_right=load_os_photos(second['id'],color)[:1]
+    left,logo=make_os_pages(first,color=color,photos=images_left)
+    right,_=make_os_pages(second,color=color,photos=images_right,photo_offset=len(images_left))
     # Cada uma fica centralizada em sua metade de A4 (148,5 mm).
     margin=(A4_LAND_W/2-PW)/2
     pages=[]
@@ -614,7 +715,7 @@ def make_pdf_double(first,second):
         x=A4_LAND_W/2
         cmds.append(f'q 0.78 0.80 0.86 RG 0.5 w [3 4] 0 d {x:.3f} 3 m {x:.3f} {A4_LAND_H-3:.3f} l S Q')
         pages.append(cmds)
-    return PDF().build(pages,logo,page_w=A4_LAND_W,page_h=A4_LAND_H)
+    return PDF().build(pages,logo,page_w=A4_LAND_W,page_h=A4_LAND_H,extra_images=images_left+images_right)
 
 def brl(v):return 'R$ '+f'{v:,.2f}'.replace(',','@').replace('.',',').replace('@','.')
 def format_date(d):
@@ -634,7 +735,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         # Política CORS restrita à origem HTTPS explicitamente configurada.
         origin=self.headers.get('Origin','').rstrip('/')
-        if self.wix_origin() and origin==self.wix_origin():
+        if origin in self.allowed_origins():
             self.send_header('Access-Control-Allow-Origin',origin)
             self.send_header('Vary','Origin')
             self.send_header('Access-Control-Allow-Methods','GET, POST, PUT, DELETE, OPTIONS')
@@ -686,9 +787,17 @@ class Handler(BaseHTTPRequestHandler):
         if origin and not origin.startswith('https://'):
             return ''
         return origin
+    @staticmethod
+    def allowed_origins():
+        # Mantém o endereço Wix antigo e o novo endereço gratuito do painel.
+        # Não se usa '*' para liberar origens arbitrárias.
+        return {origin for origin in (
+            Handler.wix_origin(),
+            'https://grafica-carvalho.onrender.com'
+        ) if origin}
     def do_OPTIONS(self):
         origin=self.headers.get('Origin','').rstrip('/')
-        if not self.path.startswith('/api/') or not origin or origin!=self.wix_origin():
+        if not self.path.startswith('/api/') or not origin or origin not in self.allowed_origins():
             return self.reply(403,{'detail':'Origem não autorizada.'})
         return self.reply(204,b'')
     def do_GET(self):self.guard('GET')
@@ -698,6 +807,7 @@ class Handler(BaseHTTPRequestHandler):
     def guard(self,method):
         try:self.route(method)
         except security.AuthError as exc:self.reply(exc.status,{'detail':exc.message})
+        except print_queue.PrintError as exc:self.reply(exc.status,{'detail':exc.message})
         except AppError as exc:self.reply(exc.status,{'detail':exc.detail})
         except (BrokenPipeError,ConnectionResetError):pass
         except Exception as exc:
@@ -718,7 +828,7 @@ class Handler(BaseHTTPRequestHandler):
                 from urllib.parse import urlsplit
                 actual=urlsplit(origin)
                 host=self.headers.get('Host','')
-                if actual.scheme not in ('http','https') or (actual.netloc.lower()!=host.lower() and origin.rstrip('/')!=self.wix_origin()):
+                if actual.scheme not in ('http','https') or (actual.netloc.lower()!=host.lower() and origin.rstrip('/') not in self.allowed_origins()):
                     raise security.AuthError(403,'Origem da solicitação não autorizada.')
         if path=='/login':
             if method!='GET':raise AppError(405,'Método não permitido.')
@@ -736,6 +846,16 @@ class Handler(BaseHTTPRequestHandler):
                 result['access_token']=token
                 return self.reply(200,result)
             return self.reply(200,result,extra={'Set-Cookie':security.secure_cookie(token,secure)})
+        # O agente local consulta o servidor por HTTPS, sem abrir portas.
+        if path.startswith('/api/print-agent/'):
+            print_queue.agent_auth(self.headers)
+            if method=='POST' and path=='/api/print-agent/heartbeat':
+                return self.reply(200,print_queue.heartbeat(self.json_body(8192)))
+            if method=='GET' and path=='/api/print-agent/next':
+                return self.reply(200,print_queue.claim_next())
+            if method=='POST' and path=='/api/print-agent/report':
+                return self.reply(200,print_queue.report(self.json_body(8192)))
+            raise AppError(404,'Recurso do agente não encontrado.')
         user=security.session(self.headers)
         if path=='/api/auth/me' and method=='GET':
             if not user:return self.reply(200,{'authenticated':False})
@@ -792,12 +912,20 @@ class Handler(BaseHTTPRequestHandler):
             security.require_role(user,('admin',))
 
         if method=='GET' and path=='/static/logo_carvalho.png':return self.reply(200,LOGO.read_bytes(),'image/png')
+        if path=='/api/print/status' and method=='GET':
+            return self.reply(200, print_queue.status())
+        if path=='/api/print/agent/key' and method=='POST':
+            security.require_role(user,('admin',))
+            return self.reply(200, print_queue.rotate_key())
+        if path=='/api/print/jobs' and method=='POST':
+            return self.reply(201, print_queue.enqueue(
+                self.json_body(8192), user['id'], fetch_order, make_pdf, make_pdf_double))
         if path=='/api/clients' and method=='GET':return self.reply(200,list_clients(param('search')))
         if path=='/api/clients' and method=='POST':return self.reply(201,create_client(self.json_body()))
         if path=='/api/next-code' and method=='GET':
             with connect() as db:
                 estimated=highwater(db)+1
-                while db.execute('SELECT 1 FROM orders WHERE code=? COLLATE NOCASE',(f'GC-{estimated:06d}',)).fetchone():estimated+=1
+                while db.execute('SELECT 1 FROM orders WHERE LOWER(code)=LOWER(?)',(f'GC-{estimated:06d}',)).fetchone():estimated+=1
             return self.reply(200,{'next_code':f'GC-{estimated:06d}','note':'Prévia; o código definitivo é reservado ao salvar.'})
         mclient=re.fullmatch(r'/api/clients/([a-fA-F0-9]{32})',path)
         if mclient:
@@ -813,9 +941,12 @@ class Handler(BaseHTTPRequestHandler):
             mode=param('mode','a4')
             id1=param('id1')
             id2=param('id2')
+            color=param('color','color')
+            if color not in ('color','bw'):
+                raise AppError(422,'Selecione colorido ou preto e branco.')
             if not re.fullmatch(r'[a-fA-F0-9]{32}',id1):
                 raise AppError(422,'Selecione a primeira ordem de serviço.')
-            if mode not in ('a4','dupla'):
+            if mode not in ('a4','a5','dupla'):
                 raise AppError(422,'Escolha uma modalidade de impressão válida.')
             if mode=='dupla':
                 if not re.fullmatch(r'[a-fA-F0-9]{32}',id2):
@@ -825,12 +956,12 @@ class Handler(BaseHTTPRequestHandler):
                 first=fetch_order(db,id1)
                 second=fetch_order(db,id2) if mode=='dupla' else None
             if mode=='dupla':
-                pdf=make_pdf_double(first,second)
-                filename='OS_DUAS_A5_EM_A4_HORIZONTAL.pdf'
+                pdf=make_pdf_double(first,second,color=color)
+                filename='OS_DUAS_A5_EM_A4_HORIZONTAL_'+('PB' if color=='bw' else 'COLORIDA')+'.pdf'
             else:
-                pdf=make_pdf(first,'a4')
+                pdf=make_pdf(first,mode,color=color)
                 code=re.sub('[^A-Za-z0-9_-]','_',first['code'] or id1[:10])[:45]
-                filename=f'OS_{code}_A4.pdf'
+                filename=f'OS_{code}_{mode.upper()}_{"PB" if color=="bw" else "COLORIDA"}.pdf'
             disp='inline' if param('visualizar')=='1' else 'attachment'
             return self.reply(200,pdf,'application/pdf',{
                 'Content-Disposition':f'{disp}; filename="{filename}"'})
@@ -859,16 +990,18 @@ class Handler(BaseHTTPRequestHandler):
                 if method=='GET':
                     with connect() as db:
                         fetch_order(db,oid)
-                        arr=[dict(x) for x in db.execute('SELECT id,filename,content_type,size,created_at FROM attachments WHERE order_id=? ORDER BY created_at,rowid',(oid,)).fetchall()]
+                        arr=[dict(x) for x in db.execute('SELECT id,filename,content_type,size,created_at FROM attachments WHERE order_id=? ORDER BY created_at,id',(oid,)).fetchall()]
                     return self.reply(200,arr)
                 if method=='POST':
-                    files=[(filename or 'arquivo',mime,blob) for field,filename,mime,blob in self.files(36*MAX_FILE+100000) if field=='files']
+                    files=[(filename or 'arquivo',mime,blob) for field,filename,mime,blob in self.files(MAX_UPLOAD_BODY) if field=='files']
                     return self.reply(201,store_attachments(oid,files))
             elif sub=='pdf' and method=='GET':
                 with connect() as db:data=fetch_order(db,oid)
-                b=make_pdf(data)
+                color=param('color','color')
+                if color not in ('color','bw'):raise AppError(422,'Cor da OS inválida.')
+                b=make_pdf(data,color=color)
                 code=re.sub('[^A-Za-z0-9_-]','_',data['code'] or oid[:10])[:48]
-                return self.reply(200,b,'application/pdf',{'Content-Disposition':f'attachment; filename="OS_{code}_A5.pdf"'})
+                return self.reply(200,b,'application/pdf',{'Content-Disposition':f'attachment; filename="OS_{code}_A5_{'PB' if color=='bw' else 'COLORIDA'}.pdf"'})
         m=re.fullmatch(r'/api/attachments/([a-fA-F0-9]{32})(?:/(preview|download))?',path)
         if m:
             aid,sub=m.groups()
@@ -888,29 +1021,15 @@ class Handler(BaseHTTPRequestHandler):
         raise AppError(404,'Página ou recurso não encontrado.')
 
 def main():
-    # Não subir no Render se o disco persistente não estiver realmente montado.
-    # SQLite e anexos usam /data; sem disco, seriam perdidos a cada reinício.
-    if os.environ.get('RENDER') or os.environ.get('RENDER_SERVICE_ID') or os.environ.get('GRAFICA_REQUIRE_PERSISTENT_DISK')=='1':
-        if DATA.resolve()!=Path('/data').resolve():
-            raise SystemExit('ERRO: defina GRAFICA_DATA_DIR=/data e monte o disco persistente em /data.')
-        def disk_is_mounted(path):
-            try:
-                if os.path.ismount(path):return True
-                with open('/proc/self/mountinfo', encoding='utf-8') as f:
-                    for line in f:
-                        fields=line.partition(' - ')[0].split()
-                        if len(fields)>4 and fields[4].replace('\\040',' ')==str(path):return True
-            except OSError:
-                pass
-            return False
-        if not disk_is_mounted(DATA.resolve()):
-            raise SystemExit('ERRO: disco persistente ausente em /data. Configure um serviço pago e adicione Persistent Disk no Render.')
+    # Render gratuito não tem disco persistente. PostgreSQL Neon é obrigatório
+    # em todas as leituras e gravações (inclusive sessões e anexos).
+    database.connection_string()
     init_db()
-    security.setup(DB)
+    security.setup()
     try:port=int(os.environ.get('PORT',os.environ.get('GRAFICA_PORT','8000')))
     except ValueError:port=8000
     host=os.environ.get('GRAFICA_BIND_HOST','0.0.0.0')
-    print(f'Gráfica Carvalho online: {host}:{port}; Banco SQLite: {DB}',flush=True)
+    print(f'Gráfica Carvalho: {host}:{port}; Banco: PostgreSQL externo (Neon)',flush=True)
     server=ThreadingHTTPServer((host,port),Handler)
     try:server.serve_forever()
     except KeyboardInterrupt:print('Sistema encerrado.')

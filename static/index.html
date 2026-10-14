@@ -8,8 +8,18 @@
 <style>
 :root{--nav:#34358e;--nav2:#242663;--violet:#464ab0;--text:#222d4b;--muted:#75819a;--line:#e6e9f3;--bg:#f4f6fc;--card:#fff;--pink:#ee2a85;--cyan:#04a6e2;--yellow:#e8d12b;--green:#55b947;--shadow:0 12px 32px rgba(36,45,91,.06)}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;font:14px Inter,"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.65;cursor:wait}a{color:var(--violet);text-decoration:none}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #b6b6ff;outline-offset:2px}
-.app{display:grid;grid-template-columns:262px minmax(0,1fr);min-height:100vh}.aside{background:linear-gradient(174deg,#494bab 0%,#34378b 48%,#252663 100%);color:#fff;padding:25px 15px;display:flex;flex-direction:column;gap:24px}.brand{padding:17px 13px 15px;border:1px solid #ffffff29;background:#ffffff12;border-radius:16px}.brand img{width:100%;max-height:89px;object-fit:contain;display:block;filter:drop-shadow(0 7px 12px rgba(15,21,67,.22))}.brand small{display:block;margin-top:15px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;font-size:10px;color:#dce1ff}.nav-title{padding:0 12px;color:#bac5f9;font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;margin-bottom:9px}.nav{display:grid;gap:4px}.nav button{background:transparent;color:#e6e8ff;width:100%;border:1px solid transparent;display:flex;align-items:center;justify-content:space-between;text-align:left;border-radius:10px;padding:12px 11px;font-weight:600;font-size:12.5px;gap:6px}.nav button:hover{background:#ffffff15}.nav button.active{background:#ffffff25;color:#fff;border-color:#ffffff26}.nav .nav-left{display:flex;align-items:center;gap:10px}.nav .ico{font-size:17px;min-width:19px}.counter{font-size:10px;border-radius:20px;background:#11175048;padding:3px 7px;min-width:24px;text-align:center}.nav button.active .counter{background:#fff;color:var(--nav2)}.aside-foot{margin-top:auto;color:#e2e6ffb3;border:1px solid #ffffff22;border-radius:14px;background:#00000016;padding:15px;font-size:11px;line-height:1.65}.aside-foot b{display:block;color:#fff;font-size:12px;margin-bottom:5px}.dots{display:flex;gap:5px;margin-top:12px}.dots i{display:block;flex:1;height:4px;border-radius:8px}.main{padding:28px clamp(16px,2.6vw,42px) 34px;min-width:0;width:100%;margin:0 auto;max-width:1660px}.head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:19px;flex-wrap:wrap}.eyebrow{color:#6264a8;text-transform:uppercase;letter-spacing:1.55px;font-weight:850;font-size:10px}.head h1{font-size:27px;letter-spacing:-.7px;line-height:1.2;margin:7px 0 5px;color:#272c62}.head p{color:var(--muted);margin:0;font-size:12.5px}.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #dce2ed;border-radius:10px;padding:10px 13px;background:#fff;color:#3f4967;font-size:12px;font-weight:750;display:inline-flex;gap:7px;align-items:center;justify-content:center}.btn:hover{background:#f9faff;border-color:#bdc5df}.btn.primary{color:#fff;background:linear-gradient(135deg,#555ac1,#3a3e9b);border-color:#4c4fac;box-shadow:0 8px 20px #4147a528}.btn.primary:hover{filter:brightness(1.09)}.btn.danger{color:#b73c53}.mini-banner{border:1px solid #4f55ae;border-radius:16px;background:linear-gradient(110deg,#40429e,#34388d);color:#fff;padding:16px 20px;display:flex;gap:20px;justify-content:space-between;align-items:center;position:relative;overflow:hidden;margin-bottom:18px}.mini-banner::before{content:"";background:radial-gradient(circle,#05a9e744,transparent 70%);height:180px;width:250px;right:100px;position:absolute}.mini-banner>div{position:relative}.mini-banner b{font-size:15px;letter-spacing:-.1px}.mini-banner p{margin:5px 0 0;color:#e0e4ff;font-size:12px}.mini-banner .signal{font-size:11px;display:flex;align-items:center;gap:7px;color:#fff;font-weight:700;white-space:nowrap;background:#ffffff1b;border-radius:50px;padding:9px 11px}.signal span{display:block;height:8px;width:8px;background:#61db9d;border-radius:50%}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}.card{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:17px 17px 15px;position:relative;overflow:hidden}.card:before{content:"";position:absolute;inset:0 auto auto 0;height:3px;width:100%;background:var(--accent,#464ab0)}.card-label{font-size:11.5px;color:var(--muted);font-weight:650;display:flex;justify-content:space-between}.card-label span{font-size:15px}.card strong{display:block;margin-top:12px;font-size:25px;letter-spacing:-.55px;color:#283063}.card small{font-size:10.5px;color:#9ca7bc}.info{border:1px solid #dfe4f6;border-left:3px solid #565bc0;border-radius:10px;background:#f9faff;padding:12px 15px;color:#637089;font-size:11.5px;margin-bottom:18px;line-height:1.55}.panel{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:16px;overflow:hidden}.panel-head{padding:18px 19px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.panel-head h2{margin:0;font-size:16px;letter-spacing:-.2px;color:#2a305e}.panel-head p{margin:5px 0 0;color:#929bb0;font-size:11px}.date-control{display:flex;align-items:center;background:#f8f9fe;border:1px solid #dde3ed;border-radius:9px;overflow:hidden}.date-control button{background:none;border:0;color:#61699b;font-size:17px;padding:5px 9px}.date-control input{border:0;background:transparent;font-size:12px;font-weight:750;color:#3e466e;padding:9px 1px;width:133px}.search{height:37px;border:1px solid #dce3ed;border-radius:9px;padding:9px 12px;font-size:12px;width:202px}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:100%;min-width:980px;text-align:left;font-size:12px}th{background:#f8f9fd;padding:13px 14px;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#7c86a4;white-space:nowrap}td{padding:12px 14px;border-top:1px solid #eef0f7;vertical-align:middle}tbody tr:hover{background:#fdfdff}.client{font-weight:800;color:#2a3158}.sub{display:block;color:#8a94aa;font-size:10.5px;margin-top:4px}.service-cell{max-width:270px;white-space:normal;line-height:1.4;font-weight:650}.pill{display:inline-block;padding:5px 8px;font-weight:800;font-size:10px;border-radius:7px;white-space:nowrap}.pill.wait{color:#a97111;background:#fff3e0}.pill.prod{color:#3060b7;background:#eaf1ff}.pill.clientwait{color:#7656ae;background:#f3efff}.pill.done{color:#147e62;background:#e6f7ee}.pill.cancel{color:#687387;background:#f0f2f6}.pill.paid{color:#147e62;background:#e6f7ee}.pill.partial{color:#b4750c;background:#fff1da}.pill.unpaid{color:#b73a52;background:#ffedf0}.row-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:200px}.tiny{background:white;border:1px solid #dbe3ed;color:#4e5879;border-radius:7px;padding:6px 8px;font-size:10.5px;font-weight:750;white-space:nowrap}.tiny:hover{background:#f3f5ff}.tiny.os{background:#eef0ff;border-color:#d4d8f9;color:#4649a6}.value{font-weight:800;white-space:nowrap;color:#2c335a}.panel-foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;color:#919bb0;font-size:10.5px}.bottom-actions{margin-top:17px;display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}.footnote{font-size:10.5px;color:#8190a8;margin-top:16px;line-height:1.6}.empty{text-align:center;padding:55px 14px;color:#7f8ba3;font-size:12px}.empty b{display:block;margin-bottom:7px;font-size:15px;color:#3e4670}.empty .empty-ico{font-size:30px;margin-bottom:7px;display:block}
-dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px));box-shadow:0 25px 85px #18205369;max-height:94vh;color:var(--text)}dialog::backdrop{background:#131a3ea1}.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--line);padding:20px 22px;background:#fff}.modal-head h2{margin:0;font-size:19px;color:#2b3069}.modal-head p{margin:6px 0 0;color:#7b86a6;font-size:11.5px}.close{background:#f0f2f8;color:#5c6780;border:0;border-radius:8px;font-size:20px;height:32px;width:34px}.form-content{max-height:min(65vh,650px);overflow-y:auto;padding:19px 22px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field.full{grid-column:1 / -1}.field label{display:block;font-size:10.5px;font-weight:800;color:#67738f;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid #dce2ee;border-radius:9px;padding:11px 12px;background:#fff;color:#27314f;font-size:13px}.field textarea{min-height:80px;resize:vertical}.drop{border:2px dashed #a9b1df;background:#f8f9ff;border-radius:13px;text-align:center;padding:19px;transition:.2s}.drop.dragover{border-color:#5258bc;background:#edf0ff}.drop .paste{display:block;color:#323a84;font-weight:850;font-size:13px;margin-bottom:7px}.drop p{font-size:11px;color:#7a84a3;margin:0 0 10px}.file-grid{display:grid;gap:8px;margin-top:12px}.file-row{display:flex;align-items:center;gap:10px;background:#fafbff;border:1px solid #e7eaf4;border-radius:10px;padding:8px}.thumb{height:44px;width:48px;display:grid;place-items:center;overflow:hidden;flex-shrink:0;background:#eaecf5;border-radius:7px;color:#5b63a0;font-weight:850;font-size:10px}.thumb img{width:100%;height:100%;object-fit:cover}.file-desc{flex:1;min-width:0}.file-desc b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.file-desc small{color:#8995aa;font-size:10px}.modal-foot{padding:15px 22px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:7px}.modal-foot>div{display:flex;gap:8px}.toast{position:fixed;z-index:99;bottom:22px;right:22px;background:#303575;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 10px 30px #30357545;max-width:390px;display:none;font-size:12px}.toast.visible{display:block}.loading{opacity:.65;pointer-events:none}.brand-accent{height:3px;display:flex}.brand-accent i{height:100%;flex:1}
+.app{display:grid;grid-template-columns:262px minmax(0,1fr);min-height:100vh}.aside{background:linear-gradient(174deg,#494bab 0%,#34378b 48%,#252663 100%);color:#fff;padding:25px 15px;display:flex;flex-direction:column;gap:24px}.brand{padding:17px 13px 15px;border:1px solid #ffffff29;background:#ffffff12;border-radius:16px}.brand img{width:100%;max-height:89px;object-fit:contain;display:block;filter:drop-shadow(0 7px 12px rgba(15,21,67,.22))}.brand small{display:block;margin-top:15px;text-transform:uppercase;letter-spacing:1.5px;font-weight:800;font-size:10px;color:#dce1ff}.nav-title{padding:0 12px;color:#bac5f9;font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;margin-bottom:9px}.nav{display:grid;gap:4px}.nav button{background:transparent;color:#e6e8ff;width:100%;border:1px solid transparent;display:flex;align-items:center;justify-content:space-between;text-align:left;border-radius:10px;padding:12px 11px;font-weight:600;font-size:12.5px;gap:6px}.nav button:hover{background:#ffffff15}.nav button.active{background:#ffffff25;color:#fff;border-color:#ffffff26}.nav .nav-left{display:flex;align-items:center;gap:10px}.nav .ico{font-size:17px;min-width:19px}.counter{font-size:10px;border-radius:20px;background:#11175048;padding:3px 7px;min-width:24px;text-align:center}.nav button.active .counter{background:#fff;color:var(--nav2)}.aside-foot{margin-top:auto;color:#e2e6ffb3;border:1px solid #ffffff22;border-radius:14px;background:#00000016;padding:15px;font-size:11px;line-height:1.65}.aside-foot b{display:block;color:#fff;font-size:12px;margin-bottom:5px}.dots{display:flex;gap:5px;margin-top:12px}.dots i{display:block;flex:1;height:4px;border-radius:8px}.main{padding:28px clamp(16px,2.6vw,42px) 34px;min-width:0;width:100%;margin:0 auto;max-width:1660px}.head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:19px;flex-wrap:wrap}.eyebrow{color:#6264a8;text-transform:uppercase;letter-spacing:1.55px;font-weight:850;font-size:10px}.head h1{font-size:27px;letter-spacing:-.7px;line-height:1.2;margin:7px 0 5px;color:#272c62}.head p{color:var(--muted);margin:0;font-size:12.5px}.actions,.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #dce2ed;border-radius:10px;padding:10px 13px;background:#fff;color:#3f4967;font-size:12px;font-weight:750;display:inline-flex;gap:7px;align-items:center;justify-content:center}.btn:hover{background:#f9faff;border-color:#bdc5df}.btn.primary{color:#fff;background:linear-gradient(135deg,#555ac1,#3a3e9b);border-color:#4c4fac;box-shadow:0 8px 20px #4147a528}.btn.primary:hover{filter:brightness(1.09)}.btn.danger{color:#b73c53}.mini-banner{border:1px solid #4f55ae;border-radius:16px;background:linear-gradient(110deg,#40429e,#34388d);color:#fff;padding:16px 20px;display:flex;gap:20px;justify-content:space-between;align-items:center;position:relative;overflow:hidden;margin-bottom:18px}.mini-banner::before{content:"";background:radial-gradient(circle,#05a9e744,transparent 70%);height:180px;width:250px;right:100px;position:absolute}.mini-banner>div{position:relative}.mini-banner b{font-size:15px;letter-spacing:-.1px}.mini-banner p{margin:5px 0 0;color:#e0e4ff;font-size:12px}.mini-banner .signal{font-size:11px;display:flex;align-items:center;gap:7px;color:#fff;font-weight:700;white-space:nowrap;background:#ffffff1b;border-radius:50px;padding:9px 11px}.signal span{display:block;height:8px;width:8px;background:#61db9d;border-radius:50%}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:20px}.card{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:17px 17px 15px;position:relative;overflow:hidden}.card:before{content:"";position:absolute;inset:0 auto auto 0;height:3px;width:100%;background:var(--accent,#464ab0)}.card-label{font-size:11.5px;color:var(--muted);font-weight:650;display:flex;justify-content:space-between}.card-label span{font-size:15px}.card strong{display:block;margin-top:12px;font-size:25px;letter-spacing:-.55px;color:#283063}.card small{font-size:10.5px;color:#9ca7bc}.info{border:1px solid #dfe4f6;border-left:3px solid #565bc0;border-radius:10px;background:#f9faff;padding:12px 15px;color:#637089;font-size:11.5px;margin-bottom:18px;line-height:1.55}.panel{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:16px;overflow:hidden}.panel-head{padding:18px 19px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.panel-head h2{margin:0;font-size:16px;letter-spacing:-.2px;color:#2a305e}.panel-head p{margin:5px 0 0;color:#929bb0;font-size:11px}.date-control{display:flex;align-items:center;background:#f8f9fe;border:1px solid #dde3ed;border-radius:9px;overflow:hidden}.date-control button{background:none;border:0;color:#61699b;font-size:17px;padding:5px 9px}.date-control input{border:0;background:transparent;font-size:12px;font-weight:750;color:#3e466e;padding:9px 1px;width:133px}.search{height:37px;border:1px solid #dce3ed;border-radius:9px;padding:9px 12px;font-size:12px;width:202px}.table-wrap{overflow:auto;width:100%}table{border-collapse:collapse;width:100%;min-width:980px;text-align:left;font-size:12px}th{background:#f8f9fd;padding:13px 14px;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#7c86a4;white-space:nowrap}td{padding:12px 14px;border-top:1px solid #eef0f7;vertical-align:middle}tbody tr:hover{background:#fdfdff}.client{font-weight:800;color:#2a3158}.sub{display:block;color:#8a94aa;font-size:10.5px;margin-top:4px}.service-cell{max-width:270px;white-space:normal;line-height:1.4;font-weight:650}.pill{display:inline-block;padding:5px 8px;font-weight:800;font-size:10px;border-radius:7px;white-space:nowrap}.pill.wait{color:#a97111;background:#fff3e0}.pill.prod{color:#3060b7;background:#eaf1ff}.pill.clientwait{color:#7656ae;background:#f3efff}.pill.done{color:#147e62;background:#e6f7ee}.pill.cancel{color:#687387;background:#f0f2f6}.pill.paid{color:#147e62;background:#e6f7ee}.pill.partial{color:#b4750c;background:#fff1da}.pill.unpaid{color:#b73a52;background:#ffedf0}.row-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:200px}.tiny{background:white;border:1px solid #dbe3ed;color:#4e5879;border-radius:7px;padding:6px 8px;font-size:10.5px;font-weight:750;white-space:nowrap}.tiny:hover{background:#f3f5ff}.tiny.os{background:#eef0ff;border:1px solid #d4d8f9;color:#33388b;border-radius:8px;padding:7px 13px;font-size:11px;min-width:75px;transition:background .18s,border-color .18s}.tiny.os:hover{background:#dfe4ff;border-color:#aab8f5}.tiny.os:focus-visible{outline:2px solid #545fcb;outline-offset:2px}.value{font-weight:800;white-space:nowrap;color:#2c335a}.panel-foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;color:#919bb0;font-size:10.5px}.bottom-actions{margin-top:17px;display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}.footnote{font-size:10.5px;color:#8190a8;margin-top:16px;line-height:1.6}.empty{text-align:center;padding:55px 14px;color:#7f8ba3;font-size:12px}.empty b{display:block;margin-bottom:7px;font-size:15px;color:#3e4670}.empty .empty-ico{font-size:30px;margin-bottom:7px;display:block}
+dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px));box-shadow:0 25px 85px #18205369;max-height:94vh;color:var(--text)}dialog::backdrop{background:#131a3ea1}.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid var(--line);padding:20px 22px;background:#fff}.modal-head h2{margin:0;font-size:19px;color:#2b3069}.modal-head p{margin:6px 0 0;color:#7b86a6;font-size:11.5px}.close{background:#f0f2f8;color:#5c6780;border:0;border-radius:8px;font-size:20px;height:32px;width:34px}.form-content{max-height:min(65vh,650px);overflow-y:auto;padding:19px 22px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field.full{grid-column:1 / -1}.field label{display:block;font-size:10.5px;font-weight:800;color:#67738f;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid #dce2ee;border-radius:9px;padding:11px 12px;background:#fff;color:#27314f;font-size:13px}.field textarea{min-height:80px;resize:vertical}
+.service-items{display:flex;flex-direction:column;gap:8px}
+.service-item{display:flex;align-items:center;gap:8px}
+.service-item-no{display:flex;flex:0 0 28px;align-items:center;justify-content:center;background:#eef0ff;color:#444a9b;border-radius:8px;font-size:12px;font-weight:850;min-height:38px}
+.service-item .service-entry-input{flex:1;min-width:0}
+.field .service-remove{flex:0 0 auto;border:1px solid #e8d6d9;border-radius:8px;color:#a13e50;background:#fff;min-height:37px;padding:6px 10px;font-size:11px;font-weight:750}
+.service-remove:hover{background:#fff1f3}
+.service-add{margin-top:9px;display:inline-flex;align-items:center;gap:6px;padding:9px 13px;background:#f1f2ff;border:1px solid #d4d8fb;color:#3a459b;border-radius:9px;font-weight:800;font-size:12px;cursor:pointer}
+.service-add:hover{background:#e5e8ff}
+.service-add:disabled{opacity:.5;cursor:not-allowed}
+.service-add:focus-visible,.service-remove:focus-visible{outline:2px solid #4d59bb;outline-offset:2px}.drop{border:2px dashed #a9b1df;background:#f8f9ff;border-radius:13px;text-align:center;padding:19px;transition:.2s}.drop.dragover{border-color:#5258bc;background:#edf0ff}.drop .paste{display:block;color:#323a84;font-weight:850;font-size:13px;margin-bottom:7px}.drop p{font-size:11px;color:#7a84a3;margin:0 0 10px}.file-grid{display:grid;gap:8px;margin-top:12px}.file-row{display:flex;align-items:center;gap:10px;background:#fafbff;border:1px solid #e7eaf4;border-radius:10px;padding:8px}.thumb{height:44px;width:48px;display:grid;place-items:center;overflow:hidden;flex-shrink:0;background:#eaecf5;border-radius:7px;color:#5b63a0;font-weight:850;font-size:10px}.thumb img{width:100%;height:100%;object-fit:cover}.file-desc{flex:1;min-width:0}.file-desc b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.file-desc small{color:#8995aa;font-size:10px}.modal-foot{padding:15px 22px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:7px}.modal-foot>div{display:flex;gap:8px}.toast{position:fixed;z-index:99;bottom:22px;right:22px;background:#303575;color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 10px 30px #30357545;max-width:390px;display:none;font-size:12px}.toast.visible{display:block}.loading{opacity:.65;pointer-events:none}.brand-accent{height:3px;display:flex}.brand-accent i{height:100%;flex:1}
 @media(max-width:1180px){.app{grid-template-columns:215px 1fr}.main{padding:22px 17px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:750px){.app{display:block}.aside{padding:11px 13px;gap:10px}.brand{padding:9px 10px}.brand img{max-width:220px;max-height:54px}.brand small,.aside-foot,.nav-title{display:none}.nav{display:flex;overflow-x:auto;padding-bottom:4px}.nav button{width:auto;white-space:nowrap;flex-shrink:0}.main{padding:16px 11px}.head h1{font-size:23px}.mini-banner{padding:14px}.mini-banner .signal{display:none}.panel-head{padding:13px}.search{width:160px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.modal-head,.modal-foot{padding:15px}.form-content{padding:15px}}
 
 /* Centro de impressão: A4 cheio ou 2×A5 lado a lado */
@@ -47,6 +57,14 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
 .client-chooser{display:flex;gap:7px}.client-chooser select{min-width:0;flex:1}.client-chooser button{padding:7px 12px;flex:0 0 auto;font-size:18px}
 .clients-panel{margin-top:2px}.clients-table{min-width:710px}.clients-table .client-main{color:#2a3061;font-weight:800}.clients-table td{line-height:1.5}
 .clients-table .small-info{display:block;color:#8a96ae;font-size:10px}.clients-panel [data-client-edit]{color:#3a4299}
+.client-pagination{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px;padding:16px 12px;border-top:1px solid var(--line)}
+.client-pagination button{min-width:35px;height:35px;border:1px solid #d9deee;border-radius:9px;background:#fff;color:#3b4475;font-size:12px;font-weight:750;padding:0 10px}
+.client-pagination button:hover:not(:disabled){background:#eef0ff;border-color:#a7afd9}
+.client-pagination button[aria-current="page"]{background:#393c99;color:#fff;border-color:#393c99;box-shadow:0 3px 8px #393c9926}
+.client-pagination button:disabled{opacity:.4;cursor:not-allowed}
+.client-pagination button:focus-visible{outline:2px solid #4e51b3;outline-offset:2px}
+.client-pagination .page-dots{display:inline-flex;align-items:center;justify-content:center;min-width:17px;color:#8b92a8}
+.client-page-summary{font-weight:700;color:#545c80}
 @media(max-width:750px){.clients-panel .panel-head{align-items:flex-start}.clients-panel .filters{width:100%}.clients-panel .filters input{width:100%}}
 </style>
 </head>
@@ -77,7 +95,8 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
 <section id="clientsView" class="panel clients-panel" hidden>
  <div class="panel-head"><div><h2>Cadastro de clientes</h2><p>Contatos organizados para agilizar novos pedidos.</p></div><div class="filters"><input type="search" id="clientSearch" class="search" placeholder="Buscar nome, telefone, CPF/CNPJ..."><button type="button" class="btn primary" id="addClientPanel">＋ Novo cliente</button></div></div>
  <div class="table-wrap"><table class="clients-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Documento</th><th>Pedidos</th><th>Ações</th></tr></thead><tbody id="clientRows"><tr><td colspan="5">Carregando clientes...</td></tr></tbody></table></div>
- <div class="panel-foot"><span id="clientsTotal">0 clientes</span><span>Cadastros armazenados no banco SQLite local.</span></div>
+ <nav id="clientPagination" class="client-pagination" aria-label="Páginas de clientes" hidden></nav>
+ <div class="panel-foot"><span id="clientsTotal" aria-live="polite">0 clientes</span><span>Até 12 clientes por página · Dados armazenados com segurança.</span></div>
 </section>
 </main>
 </div>
@@ -85,7 +104,13 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
 <div class="form-content"><div class="form-grid">
 <div class="field"><label for="fCode">Código sequencial automático</label><input id="fCode" readonly placeholder="Gerado ao salvar" title="Código exclusivo e imutável, definido pelo servidor ao salvar"><small class="field-help">Reservado automaticamente ao salvar o pedido.</small></div>
 <div class="field"><label for="fClient">Cliente cadastrado *</label><div class="client-chooser"><select id="fClient" required><option value="">Selecione um cliente...</option></select><button type="button" id="addClientFromOrder" class="btn" title="Cadastrar novo cliente">＋</button></div><small class="field-help">Selecione um cliente ou clique em + para cadastrar.</small></div>
-<div class="field full"><label for="fService">Descrição do serviço *</label><input id="fService" required maxlength="300" placeholder="Banner 300 × 100 cm, placa, adesivo, cartão..."></div>
+<div class="field full"><label for="fService">Descrição dos serviços *</label>
+  <div id="serviceItems" class="service-items">
+   <div class="service-item"><span class="service-item-no" aria-hidden="true">1</span><input id="fService" class="service-entry-input" required maxlength="300" aria-label="Serviço 1" placeholder="Ex.: Banner 300 × 100 cm, placa, adesivo..."></div>
+  </div>
+  <button type="button" id="addService" class="service-add"><span aria-hidden="true">＋</span> Adicionar serviço</button>
+  <small class="field-help">Até 8 serviços na mesma OS. A quantidade e o valor total continuam sendo do pedido inteiro.</small>
+ </div>
 <div class="field"><label for="fPhone">Telefone / WhatsApp</label><input id="fPhone" maxlength="50" readonly placeholder="Preenchido pelo cadastro do cliente"></div>
 <div class="field"><label for="fQty">Quantidade</label><input type="number" id="fQty" min="1" value="1" required></div>
 <div class="field"><label for="fEntry">Data do pedido *</label><input id="fEntry" type="date" required></div>
@@ -113,6 +138,7 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
  <div class="modal-head"><div><h2 id="printTitle">Imprimir ordens de serviço</h2><p>Escolha o formato e os pedidos que deseja colocar na folha.</p></div><button type="button" class="close" id="printClose" aria-label="Fechar impressão">×</button></div>
  <div class="print-content">
   <div class="print-options" role="group" aria-label="Formato de impressão">
+   <label class="print-option"><input type="radio" name="printMode" value="a5"><span><strong>Uma OS · A5</strong><small>Uma ordem de serviço no formato A5 real (148 × 210 mm).</small></span></label>
    <label class="print-option"><input type="radio" name="printMode" value="a4" checked><span><strong>Uma OS · A4 inteiro</strong><small>Uma ordem de serviço ampliada para preencher a folha A4 na vertical (210 × 297 mm).</small></span></label>
    <label class="print-option"><input type="radio" name="printMode" value="dupla"><span><strong>Duas OS · A4 horizontal</strong><small>Escolha dois pedidos diferentes; cada OS ocupará um espaço A5 (148 × 210 mm).</small></span></label>
   </div>
@@ -120,7 +146,12 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
    <div><label for="printOrder1">Primeira ordem de serviço</label><select id="printOrder1" required><option value="">Carregando pedidos...</option></select></div>
    <div id="printSecondField" hidden><label for="printOrder2">Segunda ordem de serviço</label><select id="printOrder2"><option value="">Selecione o segundo pedido...</option></select></div>
   </div><div class="print-preview"><div><div class="print-sheet a4" id="printSheet"><span class="print-mini-os"></span></div><div class="print-preview-title" id="printPreviewTitle">Folha A4 · vertical</div></div></div></div>
-  <div class="print-note">O PDF é gerado pelo próprio Python e está pronto para impressão. Na gráfica, selecione <b>Tamanho real / 100%</b> e desative <b>ajustar à página</b>. Na opção dupla, o centro da folha terá uma guia discreta de corte. Observações muito longas continuam em folhas adicionais.</div>
+  <fieldset style="border:1px solid #dce2f0;border-radius:10px;padding:12px 14px;margin:12px 0" id="osColorField">
+     <legend style="font-weight:800;padding:0 6px">Cor da ordem de serviço</legend>
+     <label style="display:inline-flex;gap:7px;align-items:center;margin-right:20px;cursor:pointer"><input type="radio" name="printColor" value="color" checked> Colorida</label>
+     <label style="display:inline-flex;gap:7px;align-items:center;cursor:pointer"><input type="radio" name="printColor" value="bw"> Preto e branco</label>
+  </fieldset>
+  <div class="print-note">A foto principal anexada aparece na mesma folha da OS, ao lado das informações. Outros anexos continuam disponíveis no pedido; arquivos CDR/PSD não são convertidos em imagem. O PDF é gerado pelo próprio Python e está pronto para impressão. Na gráfica, selecione <b>Tamanho real / 100%</b> e desative <b>ajustar à página</b>. Na opção dupla, o centro da folha terá uma guia discreta de corte. Para manter uma única folha, textos muito longos são resumidos na OS; o conteúdo completo permanece no pedido online.</div>
  </div>
  <div class="print-foot"><button type="button" class="btn" id="printCancel">Cancelar</button><button type="button" class="btn" id="printDownload">↓ Baixar PDF</button><button type="button" class="btn primary" id="printOpen">↗ Abrir e imprimir</button></div>
 </dialog>
@@ -158,6 +189,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmtDay=s=>{if(!s)return '—';const [y,m,d]=s.split('-');return `${d}/${m}/${y}`};
 let view='hoje', records=[],editingId=null,pending=[], searchTimer=null, reloadIndex=0,clientList=[],clientEditingId=null,clientReturnToOrder=false,clientReloadSeq=0;
+const CLIENTS_PER_PAGE=12;
+let clientPage=1, filteredClientList=[];
 $('day').value=DAY();
 function notify(msg){const t=$('toast');t.textContent=msg;t.classList.add('visible');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('visible'),4600)}
 async function api(path, opts={}){const r=await fetch(path,opts);let data;if(r.status===204)return null;const type=r.headers.get('content-type')||'';data=type.includes('application/json')?await r.json():await r.text();if(!r.ok){let error=(typeof data==='object'&&(data.detail||data.message))||`Erro HTTP ${r.status}`;if(Array.isArray(error))error=error.map(x=>x.msg).join('; ');throw Error(error)}return data}
@@ -172,7 +205,7 @@ async function refresh(){
  $('viewTitle').textContent=titleMap[view]?.[0]||'Clientes';
  if(view==='clientes'){++reloadIndex;await refreshClients();return}
  const seq=++reloadIndex;try{const params=new URLSearchParams({view,day:$('day').value,search:$('search').value});const [list,summary]=await Promise.all([api('/api/orders?'+params),api('/api/summary?day='+encodeURIComponent($('day').value))]);if(seq!==reloadIndex)return;records=list.items;$('statPending').textContent=summary.pending;$('statProducing').textContent=summary.producing;$('statCompleted').textContent=summary.completed;$('statReceivable').textContent=money(summary.receivable);document.querySelectorAll('[data-count]').forEach(n=>n.textContent=summary.counts[n.dataset.count]||0);$('viewTitle').textContent=titleMap[view][0];$('viewSub').textContent=titleMap[view][1];document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('countLabel').textContent=`${records.length} pedido${records.length===1?'':'s'}`;const tbody=$('rows');if(!records.length){tbody.innerHTML='<tr><td colspan="8"><div class="empty"><span class="empty-ico">▢</span><b>Nenhum pedido encontrado</b>Cadastre um novo serviço ou ajuste o filtro e a data.</div></td></tr>';return}
-tbody.innerHTML=records.map(s=>`<tr><td><span class="client">${esc(s.client)}</span><span class="sub">${esc(s.code||s.id.slice(0,8))}${s.attachments_count?` · 📎 ${s.attachments_count} anexo(s)`:''}</span></td><td><div class="service-cell">${esc(s.service)}</div><span class="sub">${s.quantity} un. · ${esc(s.priority)}</span></td><td>${fmtDay(s.due_date)}${s.due_date<DAY()&&s.status!=='Concluído'&&s.status!=='Cancelado'?'<span class="sub" style="color:#cb495d">Atrasado</span>':''}</td><td>${tag(s.status)}</td><td>${tag(s.payment,true)}</td><td class="value">${money(s.total)}</td><td class="value">${money(s.balance)}</td><td><div class="row-actions"><button class="tiny" data-action="edit" data-id="${esc(s.id)}">Editar</button><a class="tiny os" href="/api/orders/${encodeURIComponent(s.id)}/pdf">↓ OS A5</a><button class="tiny os" data-action="print" data-id="${esc(s.id)}">▤ A4 / Dupla</button>${s.status!=='Concluído'&&s.status!=='Cancelado'?`<button class="tiny" data-action="done" data-id="${esc(s.id)}">✓ Concluir</button>`:''}</div></td></tr>`).join('')}
+tbody.innerHTML=records.map(s=>`<tr><td><span class="client">${esc(s.client)}</span><span class="sub">${esc(s.code||s.id.slice(0,8))}${s.attachments_count?` · 📎 ${s.attachments_count} anexo(s)`:''}</span></td><td><div class="service-cell" style="white-space:pre-line">${esc(s.service)}</div><span class="sub">${s.quantity} un. · ${esc(s.priority)}</span></td><td>${fmtDay(s.due_date)}${s.due_date<DAY()&&s.status!=='Concluído'&&s.status!=='Cancelado'?'<span class="sub" style="color:#cb495d">Atrasado</span>':''}</td><td>${tag(s.status)}</td><td>${tag(s.payment,true)}</td><td class="value">${money(s.total)}</td><td class="value">${money(s.balance)}</td><td><div class="row-actions"><button class="tiny" data-action="edit" data-id="${esc(s.id)}">Editar</button><button class="tiny os" type="button" data-action="print" data-id="${esc(s.id)}" aria-label="Imprimir ordem de serviço">Imprimir</button>${s.status!=='Concluído'&&s.status!=='Cancelado'?`<button class="tiny" data-action="done" data-id="${esc(s.id)}">✓ Concluir</button>`:''}</div></td></tr>`).join('')}
 catch(e){notify('Não foi possível atualizar: '+e.message)}}
 document.querySelectorAll('[data-view]').forEach(btn=>btn.addEventListener('click',()=>{view=btn.dataset.view;refresh()}));
 $('day').addEventListener('change',refresh);
@@ -189,9 +222,9 @@ function updatePrintMode(){
  $('printOrder2').required=dual;
  $('printSheet').className='print-sheet '+(dual?'dupla':'a4');
  $('printSheet').innerHTML=dual?'<span class="print-mini-os"></span><span class="print-mini-os"></span>':'<span class="print-mini-os"></span>';
- $('printPreviewTitle').textContent=dual?'A4 horizontal · 2 × A5':'A4 vertical · 1 OS completa';
+ $('printPreviewTitle').textContent=dual?'A4 horizontal · 2 × A5':printMode()==='a5'?'A5 vertical · 1 OS completa':'A4 vertical · 1 OS completa';
 }
-async function openPrintDialog(selectedId=null){
+async function openPrintDialog(selectedId=null,selectedMode='a4'){
  try{
    const response=await api('/api/orders?view=todos');
    printOrders=response.items;
@@ -201,7 +234,7 @@ async function openPrintDialog(selectedId=null){
    $('printOrder2').innerHTML=opts;
    $('printOrder1').value=selectedId&&printOrders.some(s=>s.id===selectedId)?selectedId:'';
    $('printOrder2').value='';
-   document.querySelector('input[name="printMode"][value="a4"]').checked=true;
+   document.querySelector('input[name="printMode"][value="'+selectedMode+'"]').checked=true;
    updatePrintMode();
    $('printDialog').showModal();
  }catch(e){notify('Não foi possível carregar os pedidos: '+e.message)}
@@ -213,7 +246,7 @@ function chosenPrintUrl(inline=false){
  if(!first)throw Error('Escolha a primeira ordem de serviço.');
  if(dual&&!second)throw Error('Escolha a segunda ordem de serviço.');
  if(dual&&first===second)throw Error('As duas ordens devem ser de pedidos diferentes.');
- const qs=new URLSearchParams({mode:dual?'dupla':'a4',id1:first});
+ const qs=new URLSearchParams({mode:printMode(),id1:first,color:document.querySelector('input[name="printColor"]:checked').value});
  if(dual)qs.set('id2',second);
  if(inline)qs.set('visualizar','1');
  return '/api/print/os?'+qs.toString();
@@ -236,6 +269,54 @@ async function loadClientOptions(preselect=''){
 }
 function setSelectedClient(){const c=clientList.find(c=>c.id===$('fClient').value);$('fPhone').value=c?.phone||''}
 $('fClient').addEventListener('change',setSelectedClient);
+const ORDER_SERVICE_LIMIT=8;
+function readOrderServiceList(raw){
+ const txt=String(raw||'');
+ const lines=txt.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ if(lines.length>1&&lines.every((line,i)=>new RegExp('^'+(i+1)+'[.)]\\s+').test(line)))
+  return lines.map((line,i)=>line.replace(new RegExp('^'+(i+1)+'[.)]\\s+'),''));
+ return [txt];
+}
+function renumberOrderServices(){
+ const rows=[...$('serviceItems').querySelectorAll('.service-item')];
+ rows.forEach((row,i)=>{
+  row.querySelector('.service-item-no').textContent=String(i+1);
+  row.querySelector('.service-entry-input').setAttribute('aria-label','Serviço '+(i+1));
+ });
+ $('addService').disabled=rows.length>=ORDER_SERVICE_LIMIT;
+}
+function addOrderService(value='',focus=false){
+ const list=$('serviceItems');
+ if(list.querySelectorAll('.service-item').length>=ORDER_SERVICE_LIMIT)return;
+ const row=document.createElement('div');row.className='service-item';
+ row.innerHTML='<span class="service-item-no" aria-hidden="true"></span><input type="text" class="service-entry-input" required maxlength="300" placeholder="Descreva o próximo serviço"><button type="button" class="service-remove" aria-label="Remover serviço">Remover</button>';
+ row.querySelector('input').value=String(value);
+ list.appendChild(row);renumberOrderServices();
+ if(focus)row.querySelector('input').focus();
+}
+function resetOrderServices(raw=''){
+ const entries=readOrderServiceList(raw);
+ $('fService').value=entries[0]||'';
+ $('serviceItems').querySelectorAll('.service-item:not(:first-child)').forEach(row=>row.remove());
+ entries.slice(1).forEach(item=>addOrderService(item));
+ renumberOrderServices();
+}
+function collectOrderServices(){
+ const fields=[...$('serviceItems').querySelectorAll('.service-entry-input')];
+ const descriptions=fields.map(x=>x.value.trim());
+ if(!descriptions.length||descriptions.some(x=>!x))throw Error('Preencha a descrição de todos os serviços ou remova a linha vazia.');
+ if(descriptions.length>ORDER_SERVICE_LIMIT)throw Error('São permitidos até '+ORDER_SERVICE_LIMIT+' serviços por pedido.');
+ if(descriptions.some(x=>x.length>300))throw Error('Cada descrição pode ter no máximo 300 caracteres.');
+ const combined=descriptions.length===1?descriptions[0]:descriptions.map((x,i)=>(i+1)+'. '+x).join('\n');
+ if(combined.length>3000)throw Error('As descrições ultrapassaram o limite do pedido.');
+ return combined;
+}
+$('addService').addEventListener('click',()=>addOrderService('',true));
+$('serviceItems').addEventListener('click',ev=>{
+ const button=ev.target.closest('.service-remove');
+ if(!button)return;
+ button.closest('.service-item').remove();renumberOrderServices();
+});
 async function openModal(id=null){
  editingId=id;resetPending();$('orderForm').reset();$('deleteOrder').style.display=id?'inline-flex':'none';
  $('modalTitle').textContent=id?'Editar serviço':'Novo serviço';$('fEntry').value=DAY();$('fDue').value=$('day').value||DAY();
@@ -243,8 +324,9 @@ async function openModal(id=null){
  try{
    let s=null;if(id)s=await api('/api/orders/'+id);
    await loadClientOptions(s?.client_id||'');
+   resetOrderServices(s?.service||'');
    if(!id){const preview=await api('/api/next-code');$('fCode').value=preview.next_code;}
-   if(s){Object.entries({fCode:s.code,fService:s.service,fQty:s.quantity,fEntry:s.entry_date,fDue:s.due_date,fPriority:s.priority,fStatus:s.status,fTotal:s.total,fReceived:s.received,fNotes:s.notes}).forEach(([k,v])=>$(k).value=v??'');
+   if(s){Object.entries({fCode:s.code,fQty:s.quantity,fEntry:s.entry_date,fDue:s.due_date,fPriority:s.priority,fStatus:s.status,fTotal:s.total,fReceived:s.received,fNotes:s.notes}).forEach(([k,v])=>$(k).value=v??'');
      if(!clientList.find(c=>c.id===s.client_id)){$('fClient').innerHTML+=`<option value="">${esc(s.client)}</option>`}
      await loadSaved(id);
    }
@@ -255,7 +337,7 @@ $('newOrder').onclick=()=>openModal();$('closeModal').onclick=()=>closeModal();$
 $('dialog').addEventListener('close',resetPending);
 function closeModal(){$('dialog').close()}
 function fileMb(n){return n>1024*1024?(n/1024/1024).toFixed(1)+' MB':Math.max(1,Math.ceil(n/1024))+' KB'}
-function addFiles(files){let added=0;for(const file of files){if(!file||!file.size)continue;if(file.size>30*1024*1024){notify(`${file.name} ultrapassa o limite de 30 MB.`);continue}if(pending.length>=35){notify('Limite de 35 anexos por envio.');break}pending.push({file,url:file.type.startsWith('image/')&&file.type!=='image/svg+xml'?URL.createObjectURL(file):null});added++}renderPending();if(added)notify(`${added} arquivo(s) pronto(s) para salvar no pedido.`)}
+function addFiles(files){let added=0;for(const file of files){if(!file||!file.size)continue;if(file.size>30*1024*1024){notify(`${file.name} ultrapassa o limite de 30 MB.`);continue}if(pending.reduce((sum,item)=>sum+item.file.size,0)+file.size>40*1024*1024){notify('O envio deve ter no máximo 40 MB de anexos no total. Envie o restante em outra operação.');continue}if(pending.length>=35){notify('Limite de 35 anexos por envio.');break}pending.push({file,url:file.type.startsWith('image/')&&file.type!=='image/svg+xml'?URL.createObjectURL(file):null});added++}renderPending();if(added)notify(`${added} arquivo(s) pronto(s) para salvar no pedido.`)}
 function renderPending(){$('pendingFiles').innerHTML=pending.map((obj,i)=>`<div class="file-row"><div class="thumb">${obj.url?`<img alt="Prévia" src="${obj.url}">`:'ARQ'}</div><div class="file-desc"><b>${esc(obj.file.name)}</b><small>Para enviar · ${fileMb(obj.file.size)}</small></div><button type="button" class="tiny" data-pending="${i}">Remover</button></div>`).join('')}
 $('pendingFiles').addEventListener('click',ev=>{const btn=ev.target.closest('[data-pending]');if(!btn)return;const i=Number(btn.dataset.pending);const item=pending.splice(i,1)[0];if(item?.url)URL.revokeObjectURL(item.url);renderPending()});
 async function loadSaved(orderId){const arr=await api(`/api/orders/${orderId}/attachments`);$('savedFiles').innerHTML=arr.length?'<div style="font-size:11px;color:#7e8ba1;font-weight:800;margin-top:8px">ANEXOS SALVOS</div>':'';$('savedFiles').innerHTML+=arr.map(a=>`<div class="file-row"><div class="thumb">${['image/jpeg','image/png','image/webp','image/gif','image/bmp'].includes(a.content_type)?`<img alt="Imagem anexada" src="/api/attachments/${a.id}/preview">`:'ARQ'}</div><div class="file-desc"><b>${esc(a.filename)}</b><small>Salvo · ${fileMb(a.size)}</small></div><a class="tiny" href="/api/attachments/${a.id}/download">Baixar</a><button type="button" class="tiny" data-remove="${a.id}">Excluir</button></div>`).join('')}
@@ -265,30 +347,60 @@ for(const eventType of ['dragover','dragenter'])$('drop').addEventListener(event
 for(const eventType of ['dragleave','drop'])$('drop').addEventListener(eventType,e=>{e.preventDefault();$('drop').classList.remove('dragover')});
 $('drop').addEventListener('drop',e=>addFiles(e.dataTransfer.files));
 document.addEventListener('paste',e=>{const list=[...(e.clipboardData?.items||[])].filter(i=>i.kind==='file'&&i.type.startsWith('image/'));if(!list.length)return;const files=list.map((item,i)=>{const file=item.getAsFile();if(!file)return null;const ext=file.type.split('/')[1]?.replace('jpeg','jpg')||'png';return new File([file],file.name&&file.name!=='image.png'?file.name:`imagem_colada_${Date.now()}_${i+1}.${ext}`,{type:file.type})}).filter(Boolean);if(!files.length)return;e.preventDefault();if($('dialog').open)addFiles(files);else openModal().then(()=>addFiles(files))});
-$('orderForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('saveOrder');btn.disabled=true;btn.textContent='Salvando...';const selected=clientList.find(c=>c.id===$('fClient').value);if(!selected){notify('Cadastre ou selecione um cliente.');btn.disabled=false;btn.textContent='Salvar serviço';return}const payload={client_id:selected.id,client:selected.name,phone:selected.phone,service:$('fService').value,quantity:Number($('fQty').value),entry_date:$('fEntry').value,due_date:$('fDue').value,priority:$('fPriority').value,status:$('fStatus').value,total:Number($('fTotal').value),received:Number($('fReceived').value),notes:$('fNotes').value};try{if(payload.received>payload.total)throw Error('O valor recebido não pode ser maior que o valor total.');const saved=await api(editingId?'/api/orders/'+editingId:'/api/orders',jsonMethod(editingId?'PUT':'POST',payload));editingId=saved.id;if(pending.length){const fd=new FormData();for(const obj of pending)fd.append('files',obj.file,obj.file.name);await api(`/api/orders/${saved.id}/attachments`,{method:'POST',body:fd})}closeModal();notify('Pedido salvo com sucesso.');refresh()}catch(err){notify('Erro ao salvar: '+err.message)}finally{btn.disabled=false;btn.textContent='Salvar serviço'}});
+$('orderForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('saveOrder');btn.disabled=true;btn.textContent='Salvando...';const selected=clientList.find(c=>c.id===$('fClient').value);if(!selected){notify('Cadastre ou selecione um cliente.');btn.disabled=false;btn.textContent='Salvar serviço';return}let serviceDescription;try{serviceDescription=collectOrderServices()}catch(err){notify(err.message);btn.disabled=false;btn.textContent='Salvar serviço';return}const payload={client_id:selected.id,client:selected.name,phone:selected.phone,service:serviceDescription,quantity:Number($('fQty').value),entry_date:$('fEntry').value,due_date:$('fDue').value,priority:$('fPriority').value,status:$('fStatus').value,total:Number($('fTotal').value),received:Number($('fReceived').value),notes:$('fNotes').value};try{if(payload.received>payload.total)throw Error('O valor recebido não pode ser maior que o valor total.');const saved=await api(editingId?'/api/orders/'+editingId:'/api/orders',jsonMethod(editingId?'PUT':'POST',payload));editingId=saved.id;if(pending.length){const fd=new FormData();for(const obj of pending)fd.append('files',obj.file,obj.file.name);await api(`/api/orders/${saved.id}/attachments`,{method:'POST',body:fd})}closeModal();notify('Pedido salvo com sucesso.');refresh()}catch(err){notify('Erro ao salvar: '+err.message)}finally{btn.disabled=false;btn.textContent='Salvar serviço'}});
 $('deleteOrder').onclick=async()=>{if(!editingId||!confirm('Excluir este pedido e todos os seus anexos permanentemente?'))return;try{await api('/api/orders/'+editingId,{method:'DELETE'});closeModal();notify('Pedido excluído.');refresh()}catch(e){notify(e.message)}};
 $('backup').onclick=()=>{window.location.href='/api/backup'};
 $('restore').onclick=()=>$('backupFile').click();
 $('backupFile').addEventListener('change',async ev=>{const file=ev.target.files?.[0];if(!file)return;ev.target.value='';if(!confirm('Restaurar backup? TODOS os pedidos e anexos existentes serão substituídos. Faça um backup atual antes de continuar.'))return;try{const fd=new FormData();fd.append('file',file,file.name);const out=await api('/api/restore',{method:'POST',body:fd});notify(`Backup restaurado: ${out.orders} pedidos e ${out.attachments} anexos.`);refresh()}catch(e){notify('Falha ao restaurar: '+e.message)}});
 $('csvExport').onclick=async()=>{try{const all=(await api('/api/orders?view=todos&day='+$('day').value)).items;const keys=['code','client','phone','service','quantity','entry_date','due_date','priority','status','total','received','balance','payment','notes'];const headers=['Código','Cliente','Telefone','Serviço','Quantidade','Pedido','Entrega','Prioridade','Produção','Total','Recebido','Saldo','Pagamento','Observações'];const csv=[headers,...all.map(s=>keys.map(k=>s[k]??''))].map(row=>row.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`servicos_grafica_carvalho_${DAY()}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){notify(e.message)}};
 
-// Clientes: cadastro, pesquisa, seleção em pedidos e edição.
-async function refreshClients(){
- const seq=++clientReloadSeq;
- try{
-   const r=await api('/api/clients?search='+encodeURIComponent($('clientSearch').value));
-   if(seq!==clientReloadSeq)return;
-   const list=r.items;
-   // Contagem total independente da busca.
-   const total=await api('/api/clients');clientList=total.items;
-   $('clientCount').textContent=clientList.length;
-   $('clientsTotal').textContent=`${list.length} cliente${list.length!==1?'s':''} exibidos de ${clientList.length} cadastrados`;
-   $('clientRows').innerHTML=list.length?list.map(c=>`<tr>
+// Clientes: pesquisa geral, edição e navegação numerada de até 12 registros.
+function clientPageSlots(current,last){
+ const visible=new Set([1,last]);
+ for(let p=current-2;p<=current+2;p++)if(p>=1&&p<=last)visible.add(p);
+ const ordered=[...visible].sort((a,b)=>a-b),slots=[];
+ for(let i=0;i<ordered.length;i++){
+  if(i&&ordered[i]>ordered[i-1]+1)slots.push('…');
+  slots.push(ordered[i]);
+ }
+ return slots;
+}
+function renderClientPage(){
+ const count=filteredClientList.length;
+ const pages=Math.max(1,Math.ceil(count/CLIENTS_PER_PAGE));
+ clientPage=Math.max(1,Math.min(clientPage,pages));
+ const start=(clientPage-1)*CLIENTS_PER_PAGE;
+ const items=filteredClientList.slice(start,start+CLIENTS_PER_PAGE);
+ $('clientRows').innerHTML=items.length?items.map(c=>`<tr>
     <td><span class="client-main">${esc(c.name)}</span><small class="small-info">${esc(c.email||c.address||'Cadastro ativo')}</small></td>
     <td>${esc(c.phone||'—')}</td><td>${esc(c.document||'—')}</td>
     <td>${c.orders_count} pedido${c.orders_count===1?'':'s'}</td>
-    <td><button type="button" class="tiny" data-client-edit="${esc(c.id)}">Editar cliente</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty"><span class="empty-ico">♙</span><b>Nenhum cliente encontrado</b>Cadastre um cliente para começar.</div></td></tr>';
- }catch(err){notify('Erro ao carregar clientes: '+err.message)}
+    <td><button type="button" class="tiny" data-client-edit="${esc(c.id)}">Editar cliente</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty"><span class="empty-ico">♙</span><b>Nenhum cliente encontrado</b>Experimente outra busca ou cadastre um novo cliente.</div></td></tr>';
+ const from=count?start+1:0,to=Math.min(start+CLIENTS_PER_PAGE,count);
+ $('clientsTotal').textContent=`Exibindo ${from}–${to} de ${count} cliente${count===1?'':'s'}`+
+   (count!==clientList.length?` (total cadastrado: ${clientList.length})`:'')+` · Página ${clientPage} de ${pages}`;
+ const navigation=$('clientPagination');
+ navigation.hidden=pages<=1;
+ if(pages<=1){navigation.innerHTML='';return}
+ const btn=(page,label,disabled,active)=>'<button type="button" data-client-page="'+page+'" aria-label="'+(label==='Anterior'?'Página anterior':label==='Próximo'?'Próxima página':'Página '+label)+'"'+(active?' aria-current="page"':'')+(disabled?' disabled':'')+'>'+label+'</button>';
+ navigation.innerHTML=btn(clientPage-1,'Anterior',clientPage===1,false)+
+   clientPageSlots(clientPage,pages).map(p=>p==='…'?'<span class="page-dots" aria-hidden="true">…</span>':btn(p,String(p),false,p===clientPage)).join('')+
+   btn(clientPage+1,'Próximo',clientPage===pages,false);
+}
+async function refreshClients(){
+ const seq=++clientReloadSeq;
+ try{
+  const search=$('clientSearch').value.trim();
+  const [filtered,all]=await Promise.all([
+    api('/api/clients?search='+encodeURIComponent(search)),
+    api('/api/clients')
+  ]);
+  if(seq!==clientReloadSeq)return;
+  filteredClientList=filtered.items;
+  clientList=all.items;
+  $('clientCount').textContent=clientList.length;
+  renderClientPage();
+ }catch(err){if(seq===clientReloadSeq)notify('Erro ao carregar clientes: '+err.message)}
 }
 async function openClientModal(id=null,fromOrder=false){
  clientEditingId=id;clientReturnToOrder=fromOrder;
@@ -304,7 +416,20 @@ $('addClientFromOrder').onclick=()=>openClientModal(null,true);
 $('closeClientDialog').onclick=closeClientModal;
 $('cancelClient').onclick=closeClientModal;
 $('clientRows').addEventListener('click',ev=>{const b=ev.target.closest('[data-client-edit]');if(b)openClientModal(b.dataset.clientEdit)});
-let clientSearchTimer=null;$('clientSearch').addEventListener('input',()=>{clearTimeout(clientSearchTimer);clientSearchTimer=setTimeout(refreshClients,230)});
+$('clientPagination').addEventListener('click',ev=>{
+ const button=ev.target.closest('button[data-client-page]');
+ if(!button||button.disabled)return;
+ const next=Number(button.dataset.clientPage);
+ const last=Math.max(1,Math.ceil(filteredClientList.length/CLIENTS_PER_PAGE));
+ if(!Number.isInteger(next)||next<1||next>last||next===clientPage)return;
+ clientPage=next;
+ renderClientPage();
+});
+let clientSearchTimer=null;$('clientSearch').addEventListener('input',()=>{
+ clientPage=1;
+ clearTimeout(clientSearchTimer);
+ clientSearchTimer=setTimeout(refreshClients,230);
+});
 $('clientForm').addEventListener('submit',async e=>{
  e.preventDefault();const btn=$('saveClient');btn.disabled=true;
  const data={name:$('cName').value,phone:$('cPhone').value,document:$('cDocument').value,email:$('cEmail').value,address:$('cAddress').value,notes:$('cNotes').value};
