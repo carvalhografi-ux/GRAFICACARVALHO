@@ -47,6 +47,14 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
 .client-chooser{display:flex;gap:7px}.client-chooser select{min-width:0;flex:1}.client-chooser button{padding:7px 12px;flex:0 0 auto;font-size:18px}
 .clients-panel{margin-top:2px}.clients-table{min-width:710px}.clients-table .client-main{color:#2a3061;font-weight:800}.clients-table td{line-height:1.5}
 .clients-table .small-info{display:block;color:#8a96ae;font-size:10px}.clients-panel [data-client-edit]{color:#3a4299}
+.client-pagination{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:6px;padding:16px 12px;border-top:1px solid var(--line)}
+.client-pagination button{min-width:35px;height:35px;border:1px solid #d9deee;border-radius:9px;background:#fff;color:#3b4475;font-size:12px;font-weight:750;padding:0 10px}
+.client-pagination button:hover:not(:disabled){background:#eef0ff;border-color:#a7afd9}
+.client-pagination button[aria-current="page"]{background:#393c99;color:#fff;border-color:#393c99;box-shadow:0 3px 8px #393c9926}
+.client-pagination button:disabled{opacity:.4;cursor:not-allowed}
+.client-pagination button:focus-visible{outline:2px solid #4e51b3;outline-offset:2px}
+.client-pagination .page-dots{display:inline-flex;align-items:center;justify-content:center;min-width:17px;color:#8b92a8}
+.client-page-summary{font-weight:700;color:#545c80}
 @media(max-width:750px){.clients-panel .panel-head{align-items:flex-start}.clients-panel .filters{width:100%}.clients-panel .filters input{width:100%}}
 </style>
 </head>
@@ -77,7 +85,8 @@ dialog{border:0;padding:0;border-radius:17px;width:min(720px,calc(100vw - 22px))
 <section id="clientsView" class="panel clients-panel" hidden>
  <div class="panel-head"><div><h2>Cadastro de clientes</h2><p>Contatos organizados para agilizar novos pedidos.</p></div><div class="filters"><input type="search" id="clientSearch" class="search" placeholder="Buscar nome, telefone, CPF/CNPJ..."><button type="button" class="btn primary" id="addClientPanel">＋ Novo cliente</button></div></div>
  <div class="table-wrap"><table class="clients-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Documento</th><th>Pedidos</th><th>Ações</th></tr></thead><tbody id="clientRows"><tr><td colspan="5">Carregando clientes...</td></tr></tbody></table></div>
- <div class="panel-foot"><span id="clientsTotal">0 clientes</span><span>Cadastros armazenados no banco SQLite local.</span></div>
+ <nav id="clientPagination" class="client-pagination" aria-label="Páginas de clientes" hidden></nav>
+ <div class="panel-foot"><span id="clientsTotal" aria-live="polite">0 clientes</span><span>Até 12 clientes por página · Dados armazenados com segurança.</span></div>
 </section>
 </main>
 </div>
@@ -164,6 +173,8 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmtDay=s=>{if(!s)return '—';const [y,m,d]=s.split('-');return `${d}/${m}/${y}`};
 let view='hoje', records=[],editingId=null,pending=[], searchTimer=null, reloadIndex=0,clientList=[],clientEditingId=null,clientReturnToOrder=false,clientReloadSeq=0;
+const CLIENTS_PER_PAGE=12;
+let clientPage=1, filteredClientList=[];
 $('day').value=DAY();
 function notify(msg){const t=$('toast');t.textContent=msg;t.classList.add('visible');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('visible'),4600)}
 async function api(path, opts={}){const r=await fetch(path,opts);let data;if(r.status===204)return null;const type=r.headers.get('content-type')||'';data=type.includes('application/json')?await r.json():await r.text();if(!r.ok){let error=(typeof data==='object'&&(data.detail||data.message))||`Erro HTTP ${r.status}`;if(Array.isArray(error))error=error.map(x=>x.msg).join('; ');throw Error(error)}return data}
@@ -278,23 +289,53 @@ $('restore').onclick=()=>$('backupFile').click();
 $('backupFile').addEventListener('change',async ev=>{const file=ev.target.files?.[0];if(!file)return;ev.target.value='';if(!confirm('Restaurar backup? TODOS os pedidos e anexos existentes serão substituídos. Faça um backup atual antes de continuar.'))return;try{const fd=new FormData();fd.append('file',file,file.name);const out=await api('/api/restore',{method:'POST',body:fd});notify(`Backup restaurado: ${out.orders} pedidos e ${out.attachments} anexos.`);refresh()}catch(e){notify('Falha ao restaurar: '+e.message)}});
 $('csvExport').onclick=async()=>{try{const all=(await api('/api/orders?view=todos&day='+$('day').value)).items;const keys=['code','client','phone','service','quantity','entry_date','due_date','priority','status','total','received','balance','payment','notes'];const headers=['Código','Cliente','Telefone','Serviço','Quantidade','Pedido','Entrega','Prioridade','Produção','Total','Recebido','Saldo','Pagamento','Observações'];const csv=[headers,...all.map(s=>keys.map(k=>s[k]??''))].map(row=>row.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(';')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`servicos_grafica_carvalho_${DAY()}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}catch(e){notify(e.message)}};
 
-// Clientes: cadastro, pesquisa, seleção em pedidos e edição.
-async function refreshClients(){
- const seq=++clientReloadSeq;
- try{
-   const r=await api('/api/clients?search='+encodeURIComponent($('clientSearch').value));
-   if(seq!==clientReloadSeq)return;
-   const list=r.items;
-   // Contagem total independente da busca.
-   const total=await api('/api/clients');clientList=total.items;
-   $('clientCount').textContent=clientList.length;
-   $('clientsTotal').textContent=`${list.length} cliente${list.length!==1?'s':''} exibidos de ${clientList.length} cadastrados`;
-   $('clientRows').innerHTML=list.length?list.map(c=>`<tr>
+// Clientes: pesquisa geral, edição e navegação numerada de até 12 registros.
+function clientPageSlots(current,last){
+ const visible=new Set([1,last]);
+ for(let p=current-2;p<=current+2;p++)if(p>=1&&p<=last)visible.add(p);
+ const ordered=[...visible].sort((a,b)=>a-b),slots=[];
+ for(let i=0;i<ordered.length;i++){
+  if(i&&ordered[i]>ordered[i-1]+1)slots.push('…');
+  slots.push(ordered[i]);
+ }
+ return slots;
+}
+function renderClientPage(){
+ const count=filteredClientList.length;
+ const pages=Math.max(1,Math.ceil(count/CLIENTS_PER_PAGE));
+ clientPage=Math.max(1,Math.min(clientPage,pages));
+ const start=(clientPage-1)*CLIENTS_PER_PAGE;
+ const items=filteredClientList.slice(start,start+CLIENTS_PER_PAGE);
+ $('clientRows').innerHTML=items.length?items.map(c=>`<tr>
     <td><span class="client-main">${esc(c.name)}</span><small class="small-info">${esc(c.email||c.address||'Cadastro ativo')}</small></td>
     <td>${esc(c.phone||'—')}</td><td>${esc(c.document||'—')}</td>
     <td>${c.orders_count} pedido${c.orders_count===1?'':'s'}</td>
-    <td><button type="button" class="tiny" data-client-edit="${esc(c.id)}">Editar cliente</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty"><span class="empty-ico">♙</span><b>Nenhum cliente encontrado</b>Cadastre um cliente para começar.</div></td></tr>';
- }catch(err){notify('Erro ao carregar clientes: '+err.message)}
+    <td><button type="button" class="tiny" data-client-edit="${esc(c.id)}">Editar cliente</button></td></tr>`).join(''):'<tr><td colspan="5"><div class="empty"><span class="empty-ico">♙</span><b>Nenhum cliente encontrado</b>Experimente outra busca ou cadastre um novo cliente.</div></td></tr>';
+ const from=count?start+1:0,to=Math.min(start+CLIENTS_PER_PAGE,count);
+ $('clientsTotal').textContent=`Exibindo ${from}–${to} de ${count} cliente${count===1?'':'s'}`+
+   (count!==clientList.length?` (total cadastrado: ${clientList.length})`:'')+` · Página ${clientPage} de ${pages}`;
+ const navigation=$('clientPagination');
+ navigation.hidden=pages<=1;
+ if(pages<=1){navigation.innerHTML='';return}
+ const btn=(page,label,disabled,active)=>'<button type="button" data-client-page="'+page+'" aria-label="'+(label==='Anterior'?'Página anterior':label==='Próximo'?'Próxima página':'Página '+label)+'"'+(active?' aria-current="page"':'')+(disabled?' disabled':'')+'>'+label+'</button>';
+ navigation.innerHTML=btn(clientPage-1,'Anterior',clientPage===1,false)+
+   clientPageSlots(clientPage,pages).map(p=>p==='…'?'<span class="page-dots" aria-hidden="true">…</span>':btn(p,String(p),false,p===clientPage)).join('')+
+   btn(clientPage+1,'Próximo',clientPage===pages,false);
+}
+async function refreshClients(){
+ const seq=++clientReloadSeq;
+ try{
+  const search=$('clientSearch').value.trim();
+  const [filtered,all]=await Promise.all([
+    api('/api/clients?search='+encodeURIComponent(search)),
+    api('/api/clients')
+  ]);
+  if(seq!==clientReloadSeq)return;
+  filteredClientList=filtered.items;
+  clientList=all.items;
+  $('clientCount').textContent=clientList.length;
+  renderClientPage();
+ }catch(err){if(seq===clientReloadSeq)notify('Erro ao carregar clientes: '+err.message)}
 }
 async function openClientModal(id=null,fromOrder=false){
  clientEditingId=id;clientReturnToOrder=fromOrder;
@@ -310,7 +351,20 @@ $('addClientFromOrder').onclick=()=>openClientModal(null,true);
 $('closeClientDialog').onclick=closeClientModal;
 $('cancelClient').onclick=closeClientModal;
 $('clientRows').addEventListener('click',ev=>{const b=ev.target.closest('[data-client-edit]');if(b)openClientModal(b.dataset.clientEdit)});
-let clientSearchTimer=null;$('clientSearch').addEventListener('input',()=>{clearTimeout(clientSearchTimer);clientSearchTimer=setTimeout(refreshClients,230)});
+$('clientPagination').addEventListener('click',ev=>{
+ const button=ev.target.closest('button[data-client-page]');
+ if(!button||button.disabled)return;
+ const next=Number(button.dataset.clientPage);
+ const last=Math.max(1,Math.ceil(filteredClientList.length/CLIENTS_PER_PAGE));
+ if(!Number.isInteger(next)||next<1||next>last||next===clientPage)return;
+ clientPage=next;
+ renderClientPage();
+});
+let clientSearchTimer=null;$('clientSearch').addEventListener('input',()=>{
+ clientPage=1;
+ clearTimeout(clientSearchTimer);
+ clientSearchTimer=setTimeout(refreshClients,230);
+});
 $('clientForm').addEventListener('submit',async e=>{
  e.preventDefault();const btn=$('saveClient');btn.disabled=true;
  const data={name:$('cName').value,phone:$('cPhone').value,document:$('cDocument').value,email:$('cEmail').value,address:$('cAddress').value,notes:$('cNotes').value};
