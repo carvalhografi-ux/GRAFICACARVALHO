@@ -1,0 +1,17 @@
+name: Conferir paginação de clientes
+on:
+  pull_request:
+    branches: [url-curta-interface-render]
+  push:
+    branches: [clientes-12-abas-site-20261014]
+permissions:
+  contents: read
+jobs:
+  clients-pagination:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/clientes_paginacao.test.cjs
