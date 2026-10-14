@@ -554,7 +554,7 @@ def service_lines_for_os(value,width_pt,size):
     """Formata descrições em itens numerados mantendo cada item visível na OS.
     Descrições muito extensas são abreviadas para caber numa única folha."""
     chunks=[x.strip() for x in str(value or '').splitlines() if x.strip()]
-    numbered=len(chunks)>1 and all(re.match(r'^\\d+[.)]\\s+\\S',x) for x in chunks)
+    numbered=len(chunks)>1 and all(re.match(r'^\d+[.)]\s+\S',x) for x in chunks)
     if not numbered:
         return pdf_wrap(value,width_pt,size),False
     max_chars=max(15,int(width_pt/(size*.52)))
@@ -612,7 +612,7 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos
     if photo:
         rect(c,10,91,76,68,WHITE,FRAME)
         rect(c,89,91,49,68,WHITE,FRAME)
-        label(c,'SERVIÇOS DO PEDIDO' if '\\n' in str(order['service']) else 'DESCRIÇÃO DO SERVIÇO',14,98)
+        label(c,'SERVIÇOS DO PEDIDO' if '\n' in str(order['service']) else 'DESCRIÇÃO DO SERVIÇO',14,98)
         service_lines,multiple_services=service_lines_for_os(order['service'],68*MM,8.2)
         for i,part in enumerate(service_lines[:8 if multiple_services else 5]):
             text(c,part,14,104+i*(3.2 if multiple_services else 4.35),7.55 if multiple_services else 8.0)
