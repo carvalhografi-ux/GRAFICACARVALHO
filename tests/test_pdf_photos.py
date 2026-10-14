@@ -131,5 +131,41 @@ class PdfOsTests(unittest.TestCase):
             self.assertEqual(jpeg.mode,'L')
             self.assertEqual(jpeg.size,(100,80))
 
+
+    def test_multiple_services_in_a5_same_page_without_photo(self):
+        data=order(1)
+        data['service']='\n'.join(f'{i}. SERVICO_{i}' for i in range(1,9))
+        with mock.patch.object(app,'load_os_photos',return_value=[]):
+            output=app.make_pdf(data,'a5',color='color')
+        reader=PdfReader(io.BytesIO(output))
+        self.assertEqual(len(reader.pages),1)
+        stream=reader.pages[0].get_contents().get_data()
+        for i in range(1,9):
+            self.assertIn(f'{i}. SERVICO_{i}'.encode(),stream)
+
+    def test_multiple_services_with_photo_in_one_page_bw(self):
+        data=order(1)
+        data['service']='\n'.join(f'{i}. ITEM_{i}' for i in range(1,9))
+        with mock.patch.object(app,'load_os_photos',side_effect=lambda oid,color:sample_images(color)):
+            output=app.make_pdf(data,'a4',color='bw')
+        reader=PdfReader(io.BytesIO(output))
+        self.assertEqual(len(reader.pages),1)
+        stream=reader.pages[0].get_contents().get_data()
+        self.assertIn(b'8. ITEM_8',stream)
+        self.assertIn(b'/Foto0 Do',stream)
+        photo=reader.pages[0]['/Resources']['/XObject']['/Foto0'].get_object()
+        self.assertEqual(str(photo['/ColorSpace']),'/DeviceGray')
+
+    def test_service_length_limit_and_backward_compatibility(self):
+        data=order(1)
+        data['service']='\n'.join(f'{i}. '+'L'*300 for i in range(1,9))
+        self.assertEqual(app.validated(data)['service'],data['service'])
+        data['service']='9'*(3001)
+        with self.assertRaises(app.AppError):
+            app.validated(data)
+        lines,multi=app.service_lines_for_os('Banner antigo 100 x 70',100,8)
+        self.assertFalse(multi)
+        self.assertIn('Banner antigo',lines[0])
+
 if __name__=='__main__':
     unittest.main()

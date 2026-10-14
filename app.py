@@ -206,7 +206,7 @@ def validated(payload):
             'code':get_text('code',28),
             'client':get_text('client',100,True),
             'phone':get_text('phone',50),
-            'service':get_text('service',300,True),
+            'service':get_text('service',3000,True),
             'quantity':int(payload.get('quantity',1)),
             'entry_date':validate_day(payload.get('entry_date')),
             'due_date':validate_day(payload.get('due_date')),
@@ -550,6 +550,17 @@ def load_os_photos(oid, color='color'):
                 continue
     return photos
 
+def service_lines_for_os(value,width_pt,size):
+    """Formata descrições em itens numerados mantendo cada item visível na OS.
+    Descrições muito extensas são abreviadas para caber numa única folha."""
+    chunks=[x.strip() for x in str(value or '').splitlines() if x.strip()]
+    numbered=len(chunks)>1 and all(re.match(r'^\d+[.)]\s+\S',x) for x in chunks)
+    if not numbered:
+        return pdf_wrap(value,width_pt,size),False
+    max_chars=max(15,int(width_pt/(size*.52)))
+    shortened=[x if len(x)<=max_chars else x[:max_chars-3].rstrip()+'...' for x in chunks]
+    return shortened,True
+
 def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos=(), photo_offset=0):
     INK='#2c316f';MUT='#6b7393';FRAME='#e0e4f0';PURP='#34378e';WHITE='#ffffff'
     def rgb(h):
@@ -601,10 +612,10 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos
     if photo:
         rect(c,10,91,76,68,WHITE,FRAME)
         rect(c,89,91,49,68,WHITE,FRAME)
-        label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
-        service_lines=pdf_wrap(order['service'],68*MM,8.2)
-        for i,part in enumerate(service_lines[:5]):
-            text(c,part,14,104+i*4.35,8.0)
+        label(c,'SERVIÇOS DO PEDIDO' if '\n' in str(order['service']) else 'DESCRIÇÃO DO SERVIÇO',14,98)
+        service_lines,multiple_services=service_lines_for_os(order['service'],68*MM,8.2)
+        for i,part in enumerate(service_lines[:8 if multiple_services else 5]):
+            text(c,part,14,104+i*(3.2 if multiple_services else 4.35),7.55 if multiple_services else 8.0)
         rect(c,14,127,68,.3,FRAME)
         label(c,'QTD.',14,132);text(c,order['quantity'],14,138,7.3,INK,True)
         label(c,'PRIORIDADE',34,132);text(c,order['priority'][:13],34,138,7,INK,True)
@@ -623,19 +634,32 @@ def make_os_pages(order, footer_label="A5 (148 x 210 mm)", color='color', photos
         for i,part in enumerate(pdf_wrap(photo['name'],41*MM,6.3)[:2]):
             text(c,part,93,152+i*3.2,6.2,MUT)
     else:
-        panel(c,91,33)
-        label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
-        service_lines=pdf_wrap(order['service'],119*MM,9.3)
-        for i,part in enumerate(service_lines[:3]):text(c,part,14,104+i*5,9.3)
-        rect(c,14,115.5,120,.3,FRAME)
-        label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
-        label(c,'PRIORIDADE',45,119.5);text(c,order['priority'][:16],69,119.5,7.8,INK,True)
-        label(c,'SITUAÇÃO',101,118);text(c,order['status'][:15],101,122,6.8,INK,True)
-        panel(c,127,32)
-        label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
-        notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
-        for i,part in enumerate(notes[:4]):text(c,part,14,141+i*4.3,8.4)
-    if len(name_lines)>1 or len(service_lines)>(5 if photo else 3) or len(notes)>(2 if photo else 4):
+        service_lines,multiple_services=service_lines_for_os(order['service'],119*MM,9.3)
+        if multiple_services:
+            panel(c,91,68)
+            label(c,'SERVIÇOS DO PEDIDO',14,98)
+            for i,part in enumerate(service_lines[:8]):text(c,part,14,104+i*3.2,8.1)
+            rect(c,14,131,120,.3,FRAME)
+            label(c,'QTD.',14,136);text(c,order['quantity'],27,136,7.6,INK,True)
+            label(c,'PRIORIDADE',45,136);text(c,order['priority'][:16],69,136,7.6,INK,True)
+            label(c,'SITUAÇÃO',101,136);text(c,order['status'][:15],101,140,6.8,INK,True)
+            rect(c,14,142,120,.3,FRAME)
+            label(c,'OBSERVAÇÕES / ACABAMENTO',14,147)
+            notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8)
+            for i,part in enumerate(notes[:2]):text(c,part,14,152+i*4.0,7.7)
+        else:
+            panel(c,91,33)
+            label(c,'DESCRIÇÃO DO SERVIÇO',14,98)
+            for i,part in enumerate(service_lines[:3]):text(c,part,14,104+i*5,9.3)
+            rect(c,14,115.5,120,.3,FRAME)
+            label(c,'QTD.',14,119.5);text(c,order['quantity'],27,119.5,7.8,INK,True)
+            label(c,'PRIORIDADE',45,119.5);text(c,order['priority'][:16],69,119.5,7.8,INK,True)
+            label(c,'SITUAÇÃO',101,118);text(c,order['status'][:15],101,122,6.8,INK,True)
+            panel(c,127,32)
+            label(c,'OBSERVAÇÕES / ACABAMENTO',14,134)
+            notes=pdf_wrap(order['notes'] or 'Sem observações adicionais.',119*MM,8.5)
+            for i,part in enumerate(notes[:4]):text(c,part,14,141+i*4.3,8.4)
+    if len(name_lines)>1 or len(service_lines)>(8 if multiple_services else (5 if photo else 3)) or len(notes)>(2 if (photo or multiple_services) else 4):
         text(c,'Informações extensas: consulte o pedido completo no sistema.',14,160.4,5.2,MUT)
     panel(c,162,18)
     label(c,'VALOR TOTAL',14,168);text(c,brl(order['total']),14,176,9.2,INK,True)
